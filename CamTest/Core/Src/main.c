@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "OV7670_control.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -42,6 +43,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 DCMI_HandleTypeDef hdcmi;
+DMA_HandleTypeDef hdma_dcmi;
 
 I2C_HandleTypeDef hi2c2;
 
@@ -54,6 +56,7 @@ UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_DCMI_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C2_Init(void);
@@ -63,6 +66,15 @@ static void MX_I2C2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void DCMICompleteCallback(DCMI_HandleTypeDef *hdcmi){
+	frame_flag = 1;
+}
+void DCMIErrorCallback(DCMI_HandleTypeDef *hdcmi){
+	// just do random stuff for debug
+	int i = 0;
+	i++;
+}
 
 /* USER CODE END 0 */
 
@@ -75,6 +87,12 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -94,10 +112,16 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_DCMI_Init();
   MX_USART1_UART_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
+  OV7670_init(&hi2c2);
+
+
+  HAL_DMA_RegisterCallback(&hdma_dcmi, HAL_DMA_XFER_CPLT_CB_ID, &DCMICompleteCallback);
+  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS);
 
   /* USER CODE END 2 */
 
@@ -105,7 +129,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  HAL_StatusTypeDef status = HAL_DMA_PollForTransfer(&hdma_dcmi, HAL_DMA_FULL_TRANSFER, 10000);
     /* USER CODE END WHILE */
+	  if(frame_flag){
+		  frame_flag = 0;
+		  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS);
+	  }
 
     /* USER CODE BEGIN 3 */
   }
@@ -174,7 +203,6 @@ static void MX_DCMI_Init(void)
 {
 
   /* USER CODE BEGIN DCMI_Init 0 */
-
   /* USER CODE END DCMI_Init 0 */
 
   /* USER CODE BEGIN DCMI_Init 1 */
@@ -182,8 +210,8 @@ static void MX_DCMI_Init(void)
   /* USER CODE END DCMI_Init 1 */
   hdcmi.Instance = DCMI;
   hdcmi.Init.SynchroMode = DCMI_SYNCHRO_HARDWARE;
-  hdcmi.Init.PCKPolarity = DCMI_PCKPOLARITY_FALLING;
-  hdcmi.Init.VSPolarity = DCMI_VSPOLARITY_LOW;
+  hdcmi.Init.PCKPolarity = DCMI_PCKPOLARITY_RISING;
+  hdcmi.Init.VSPolarity = DCMI_VSPOLARITY_HIGH;
   hdcmi.Init.HSPolarity = DCMI_HSPOLARITY_LOW;
   hdcmi.Init.CaptureRate = DCMI_CR_ALL_FRAME;
   hdcmi.Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B;
@@ -197,6 +225,13 @@ static void MX_DCMI_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN DCMI_Init 2 */
+  //hdcmi.DMA_Handle->
+
+  //hdcmi.XferSize = IMG_ROWS * IMG_COLUMNS;
+  //hdcmi.pBuffPtr = frame_buffer;
+
+  //hdcmi.DMA_Handle->XferCpltCallback = DCMICompleteCallback;
+  //hdcmi.DMA_Handle->XferErrorCallback = DCMIErrorCallback;
 
   /* USER CODE END DCMI_Init 2 */
 
@@ -280,6 +315,22 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 
 }
 

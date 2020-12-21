@@ -42,6 +42,16 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+// SCCB write address
+#define SCCB_REG_ADDR 			0x01
+
+// OV7670 camera settings
+#define OV7670_REG_NUM 			121
+#define OV7670_WRITE_ADDR 	0x42
+
+// Image settings
+#define IMG_ROWS   					144
+#define IMG_COLUMNS   			174
 
 /* USER CODE END EC */
 
@@ -54,6 +64,14 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+
+static volatile unsigned int frame_flag = 0;
+static volatile unsigned int send_sync_frame = 0;
+volatile uint16_t frame_buffer[IMG_ROWS * IMG_COLUMNS];
+
+void DCMICompleteCallback(DCMI_HandleTypeDef *hdcmi);
+void DCMIErrorCallback(DCMI_HandleTypeDef *hdcmi);
+
 
 /* USER CODE END EFP */
 
