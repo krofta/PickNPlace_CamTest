@@ -38,6 +38,11 @@
 /*
 * Initialize SCCB
 */
+uint16_t CAMERA_IO_Read(I2C_HandleTypeDef *hi2c, uint8_t Addr, uint16_t Reg);
+void CAMERA_IO_Write(I2C_HandleTypeDef *hi2c, uint8_t Addr, uint16_t Reg, uint16_t Value);
+
+static HAL_StatusTypeDef I2Cx_ReadMultiple(I2C_HandleTypeDef *hi2c, uint8_t Addr, uint16_t Reg, uint16_t MemAddress, uint8_t *Buffer, uint16_t Length);
+static HAL_StatusTypeDef I2Cx_WriteMultiple(I2C_HandleTypeDef *hi2c, uint8_t Addr, uint16_t Reg, uint16_t MemAddress, uint8_t *Buffer, uint16_t Length);
 extern void SCCB_init(void);
 extern int OV7670_init(I2C_HandleTypeDef *hi2c);
 //int SCCB_write_reg(uint8_t reg_addr, uint8_t* data);

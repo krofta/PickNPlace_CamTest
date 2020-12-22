@@ -47,7 +47,7 @@ extern "C" {
 
 // OV7670 camera settings
 #define OV7670_REG_NUM 			121
-#define OV7670_WRITE_ADDR 	0x42
+#define OV7670_WRITE_ADDR 	0x21	// not shiftet
 
 // Image settings
 #define IMG_ROWS   					144
@@ -76,6 +76,8 @@ void DCMIErrorCallback(DCMI_HandleTypeDef *hdcmi);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define LED_Pin GPIO_PIN_7
+#define LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
