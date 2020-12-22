@@ -22,11 +22,26 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+#define TIMER_FREQ 90.0
+#define T0H 0.5
+#define T1H 1.2
+#define T0L 2.0
+#define T1L 1.3
+#define TRESET 50
+
+uint8_t led_data[36];
+uint16_t led_pos = 0;
+uint8_t led_mask = 0b10000000;
+uint8_t led_lastbit = 0;
+uint16_t low_CCR1, low_ARR, high_CCR1, high_ARR, treset_ARR;
+long double period;
+
+void write_ws2812();
 
 /* USER CODE END PTD */
 
@@ -74,6 +89,86 @@ void DCMIErrorCallback(DCMI_HandleTypeDef *hdcmi){
 	int i = 0;
 	i++;
 }
+
+
+void write_ws2812(){
+	if(led_data[0] & 0x10000000){
+		TIM2->CCR1 = (uint32_t)high_CCR1;
+		TIM2->ARR = (uint32_t)high_ARR;
+	}else{
+		TIM2->CCR1 = (uint32_t)low_CCR1;
+		TIM2->ARR = (uint32_t)low_ARR;
+	}
+	led_pos = 0;
+	led_lastbit = 0;
+	led_mask = 0b01000000;
+	TIM2->CCER |= TIM_CCER_CC1E;	//enable pwm channel to pin
+	TIM2->CR1 |= TIM_CR1_CEN;		// enable channel 1
+}
+
+void show_neopixels(){
+	led_pos = 0; //set the interupt to start at first byte
+	led_lastbit = 0;
+	led_mask = 0B10000000; //set the interupt to start at second bit
+
+	TIM2->SR &= ~TIM_SR_UIF; // clear UIF flag
+	TIM2->DIER |= TIM_DIER_UIE; //enable interupt flag to be generated to start transmission
+}
+
+void Neopixel_setup(void){
+
+	//calculate all the timings.
+	period = 1 / TIMER_FREQ;
+	low_CCR1 = round(T0H / period);
+	low_ARR = round((T0H + T0L) / period);
+	high_CCR1 = round(T1H / period);
+	high_ARR = round((T1H + T1L) / period);
+	treset_ARR = ceil(TRESET / period);
+
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; //enable port D clock
+	GPIOA->MODER |= GPIO_MODER_MODER15_1; //setup pin 12 on port d to AF mode
+	GPIOA->AFR[1] = (GPIOA->AFR[1] & (0b1111<<(4*(12-8))) | 0b0010<<(4*(12-8))); //setup pin 12 on port D to AF timer 2-5
+
+
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; //enable the timer4 clock
+	TIM2->PSC = 0;   //set prescale to zero as timer has to go as fast as posible
+	TIM2->CCMR1 = (TIM2->CCMR1 & ~(0b110<<4)) | (0b110<<4); //set PWM mode 110
+	TIM2->CCR1 = 0; //set to zero so that the pin stay low until transmission
+	TIM2->ARR = treset_ARR; //set to timing for reset LEDs
+	TIM2->CCER |= TIM_CCER_CC1E; //enable output to pin.
+	TIM2->CR1 |= TIM_CR1_CEN; //Disable channel 1. This bit is used to start and stop transmission.
+	TIM2->CR1 |= TIM_CR1_ARPE; //buffer ARR
+	TIM2->CCMR1 |= TIM_CCMR1_OC1PE; //buffer CCR1
+	TIM2->DIER &= ~TIM_DIER_UIE; // ensure we are not enabling interrupt flag to be generated this bit is used to start/stop transmission
+	TIM2->CR1 |= TIM_CR1_CEN; //enable channel 1.
+
+	NVIC_EnableIRQ(TIM2_IRQn); // Enable interrupt(NVIC level)
+}
+void TIM2_IRQHandler(void){
+
+	TIM2->SR &= ~TIM_SR_UIF; // clear UIF flag
+
+		if(led_pos<sizeof(led_data)){
+			if(led_data[led_pos] & led_mask){
+				TIM2->CCR1 = high_CCR1;
+				TIM2->ARR = high_ARR;
+			}else{
+				TIM2->CCR1 = low_CCR1;
+				TIM2->ARR = low_ARR;
+			}
+			if(led_mask==1){
+				led_mask = 0B10000000;
+				led_pos+=1;
+			}else led_mask = led_mask >> 1;
+		}else{
+			TIM2->CCR1 = 0; //set to zero so that pin stays low
+			TIM2->ARR = treset_ARR; //set to timing for reset LEDs
+			TIM2->DIER &= ~TIM_DIER_UIE; //disable interrupt flag to end transmission.
+		}
+}
+
+
+
 
 /* USER CODE END 0 */
 
@@ -129,7 +224,9 @@ int main(void)
 
 
   //HAL_DMA_RegisterCallback(&hdma_dcmi, HAL_DMA_XFER_CPLT_CB_ID, &DCMICompleteCallback);
-  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
+  //HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
+
+  Neopixel_setup();
 
   /* USER CODE END 2 */
 
@@ -137,11 +234,28 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  /*
 	  HAL_StatusTypeDef status = HAL_DMA_PollForTransfer(&hdma_dcmi, HAL_DMA_FULL_TRANSFER, 10000);
 	  if(status == HAL_OK){
 		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
 	  }
+		*/
+
+	  //fill the array with repeate pattern of Green-Red-Blue
+	  for (uint8_t i = 0; i < 36; i++)
+		  led_data[i] = 10;  //use low values so that it does blind the camera
+	  //write_ws2812();  //transmit the data to the neopixel strip.
+	  show_neopixels();
+	  HAL_Delay(1000);
+	  //fill the array with repeate pattern of Green-Red-Blue
+	  for (uint8_t i = 0; i < 36; i++)
+		  led_data[i] = 10;  //use low values so that it does blind the camera
+	  show_neopixels();
+	  //write_ws2812();  //transmit the data to the neopixel strip.
+
+	  HAL_Delay(1000);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

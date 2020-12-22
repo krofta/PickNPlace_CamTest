@@ -28,6 +28,14 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
 
+extern uint8_t led_data[36];
+extern uint16_t led_pos;
+extern uint8_t led_mask;
+extern uint8_t led_lastbit;
+extern uint16_t low_CCR1, low_ARR, high_CCR1, high_ARR, treset_ARR;
+extern long double period;
+
+
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/

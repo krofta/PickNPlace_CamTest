@@ -32,7 +32,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -53,6 +52,8 @@ extern "C" {
 #define IMG_ROWS   					144
 #define IMG_COLUMNS   			174
 
+
+
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -71,6 +72,8 @@ volatile uint16_t frame_buffer[IMG_ROWS * IMG_COLUMNS];
 
 void DCMICompleteCallback(DCMI_HandleTypeDef *hdcmi);
 void DCMIErrorCallback(DCMI_HandleTypeDef *hdcmi);
+
+
 
 
 /* USER CODE END EFP */
