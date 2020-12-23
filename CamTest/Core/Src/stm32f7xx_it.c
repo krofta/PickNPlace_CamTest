@@ -23,19 +23,11 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ws2812.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-
-extern uint8_t led_data[3];
-extern cnt;
-extern uint16_t led_pos;
-extern uint8_t led_mask;
-extern uint8_t led_lastbit;
-extern uint16_t low_CCR1, low_ARR, high_CCR1, high_ARR, treset_ARR;
-extern long double period;
-
 
 /* USER CODE END TD */
 
@@ -67,7 +59,7 @@ extern long double period;
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_dcmi;
 extern DCMI_HandleTypeDef hdcmi;
-extern TIM_HandleTypeDef htim3;
+extern DMA_HandleTypeDef hdma_tim3_ch1_trig;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -211,45 +203,17 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles TIM3 global interrupt.
+  * @brief This function handles DMA1 stream4 global interrupt.
   */
-void TIM3_IRQHandler(void)
+void DMA1_Stream4_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM3_IRQn 0 */
-	if(led_pos<sizeof(led_data)){
-		//cnt++;
-		if(led_data[led_pos] & led_mask){
-			//TIM2->CCR1 = high_CCR1;
-			//TIM2->ARR = high_ARR;
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, high_CCR1);
-			__HAL_TIM_SET_AUTORELOAD(&htim3, (uint32_t)high_ARR);
-		}else{
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, low_CCR1);
-			__HAL_TIM_SET_AUTORELOAD(&htim3, low_ARR);
-			//TIM2->CCR1 = low_CCR1;
-			//TIM2->ARR = low_ARR;
-		}
+  /* USER CODE BEGIN DMA1_Stream4_IRQn 0 */
 
-		if(led_mask==1){
-			led_mask = 0b10000000;
-			led_pos= led_pos + 1;
-		}else{
-			led_mask = led_mask >> 1;
-		}
-
-	}else{
-		//HAL_TIM_Base_Stop_IT(htim);
-		//TIM3->CCR1 = 0; //set to zero so that pin stays low
-		//TIM3->ARR = treset_ARR; //set to timing for reset LEDs
-		//TIM3->DIER &= ~TIM_DIER_UIE; //disable interrupt flag to end transmission.
-		HAL_TIM_PWM_Stop_IT(&htim3, TIM_CHANNEL_1);
-		cnt = 0;
-	}
-  /* USER CODE END TIM3_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim3);
-  /* USER CODE BEGIN TIM3_IRQn 1 */
-
-  /* USER CODE END TIM3_IRQn 1 */
+  /* USER CODE END DMA1_Stream4_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_tim3_ch1_trig);
+  /* USER CODE BEGIN DMA1_Stream4_IRQn 1 */
+  HAL_TIM_PWM_Stop_DMA(&TIM_HANDLE, TIM_CH);
+  /* USER CODE END DMA1_Stream4_IRQn 1 */
 }
 
 /**
