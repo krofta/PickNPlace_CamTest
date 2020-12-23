@@ -27,17 +27,25 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-#define TIMER_FREQ 90.0
-#define T0H 0.5
-#define T1H 1.2
-#define T0L 2.0
-#define T1L 1.3
+#define TIMER_FREQ 45.0
+/*
+#define T0H 0.35
+#define T0L 0.8
+#define T1H 0.7
+#define T1L 0.6
+*/
+
+#define T0H 3.0
+#define T0L 7.0
+#define T1H 7.0
+#define T1L 3.0
 #define TRESET 50
 
+uint16_t cnt;
 uint8_t led_data[36];
-uint16_t led_pos = 0;
-uint8_t led_mask = 0b10000000;
-uint8_t led_lastbit = 0;
+uint16_t led_pos;
+uint8_t led_mask;
+uint8_t led_lastbit;
 uint16_t low_CCR1, low_ARR, high_CCR1, high_ARR, treset_ARR;
 long double period;
 
@@ -61,6 +69,8 @@ DMA_HandleTypeDef hdma_dcmi;
 
 I2C_HandleTypeDef hi2c2;
 
+TIM_HandleTypeDef htim3;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -74,6 +84,7 @@ static void MX_DMA_Init(void);
 static void MX_DCMI_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -92,18 +103,26 @@ void DCMIErrorCallback(DCMI_HandleTypeDef *hdcmi){
 
 
 void write_ws2812(){
-	if(led_data[0] & 0x10000000){
-		TIM2->CCR1 = (uint32_t)high_CCR1;
-		TIM2->ARR = (uint32_t)high_ARR;
-	}else{
-		TIM2->CCR1 = (uint32_t)low_CCR1;
-		TIM2->ARR = (uint32_t)low_ARR;
-	}
 	led_pos = 0;
 	led_lastbit = 0;
-	led_mask = 0b01000000;
-	TIM2->CCER |= TIM_CCER_CC1E;	//enable pwm channel to pin
-	TIM2->CR1 |= TIM_CR1_CEN;		// enable channel 1
+	led_mask = 0b10000000;
+	cnt = 0;
+
+	if(led_data[0] & led_mask){
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (uint32_t)high_CCR1);
+		__HAL_TIM_SET_AUTORELOAD(&htim3, (uint32_t)high_ARR);
+		//TIM2->CCR1 = (uint32_t)high_CCR1;
+		//TIM2->ARR = (uint32_t)high_ARR;
+	}else{
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (uint32_t)low_CCR1);
+		__HAL_TIM_SET_AUTORELOAD(&htim3, (uint32_t)low_ARR);
+		//TIM2->CCR1 = (uint32_t)low_CCR1;
+		//TIM2->ARR = (uint32_t)low_ARR;
+	}
+
+	//TIM2->CCER |= TIM_CCER_CC1E;	//enable pwm channel to pin
+	//TIM2->CR1 |= TIM_CR1_CEN;		// enable channel 1
+	HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1);
 }
 
 void show_neopixels(){
@@ -111,8 +130,9 @@ void show_neopixels(){
 	led_lastbit = 0;
 	led_mask = 0B10000000; //set the interupt to start at second bit
 
-	TIM2->SR &= ~TIM_SR_UIF; // clear UIF flag
-	TIM2->DIER |= TIM_DIER_UIE; //enable interupt flag to be generated to start transmission
+	HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1);
+	//TIM2->SR &= ~TIM_SR_UIF; // clear UIF flag
+	//TIM2->DIER |= TIM_DIER_UIE; //enable interupt flag to be generated to start transmission
 }
 
 void Neopixel_setup(void){
@@ -125,9 +145,9 @@ void Neopixel_setup(void){
 	high_ARR = round((T1H + T1L) / period);
 	treset_ARR = ceil(TRESET / period);
 
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; //enable port D clock
-	GPIOA->MODER |= GPIO_MODER_MODER15_1; //setup pin 12 on port d to AF mode
-	GPIOA->AFR[1] = (GPIOA->AFR[1] & (0b1111<<(4*(12-8))) | 0b0010<<(4*(12-8))); //setup pin 12 on port D to AF timer 2-5
+	//RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; //enable port A clock
+	//GPIOA->MODER |= GPIO_MODER_MODER15_1; //setup pin 12 on port d to AF mode
+	//GPIOA->AFR[1] = (GPIOA->AFR[1] & (0b1111<<(4*(12-8))) | 0b0010<<(4*(12-8))); //setup pin 12 on port D to AF timer 2-5
 
 
 	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; //enable the timer4 clock
@@ -144,6 +164,7 @@ void Neopixel_setup(void){
 
 	NVIC_EnableIRQ(TIM2_IRQn); // Enable interrupt(NVIC level)
 }
+/*
 void TIM2_IRQHandler(void){
 
 	TIM2->SR &= ~TIM_SR_UIF; // clear UIF flag
@@ -166,6 +187,7 @@ void TIM2_IRQHandler(void){
 			TIM2->DIER &= ~TIM_DIER_UIE; //disable interrupt flag to end transmission.
 		}
 }
+*/
 
 
 
@@ -210,6 +232,7 @@ int main(void)
   MX_DCMI_Init();
   MX_USART1_UART_Init();
   MX_I2C2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   //OV7670_init(&hi2c2);
   //memset(frame_buffer, 0, sizeof(uint16_t) *IMG_ROWS * IMG_COLUMNS);
@@ -226,7 +249,9 @@ int main(void)
   //HAL_DMA_RegisterCallback(&hdma_dcmi, HAL_DMA_XFER_CPLT_CB_ID, &DCMICompleteCallback);
   //HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
 
-  Neopixel_setup();
+  //Neopixel_setup();
+
+  //HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
   /* USER CODE END 2 */
 
@@ -242,17 +267,16 @@ int main(void)
 	  }
 		*/
 
-	  //fill the array with repeate pattern of Green-Red-Blue
+
 	  for (uint8_t i = 0; i < 36; i++)
-		  led_data[i] = 10;  //use low values so that it does blind the camera
-	  //write_ws2812();  //transmit the data to the neopixel strip.
-	  show_neopixels();
+		  led_data[i] = 0;  //use low values so that it does blind the camera
+	  //HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1);
+	  write_ws2812();
 	  HAL_Delay(1000);
-	  //fill the array with repeate pattern of Green-Red-Blue
 	  for (uint8_t i = 0; i < 36; i++)
-		  led_data[i] = 10;  //use low values so that it does blind the camera
-	  show_neopixels();
-	  //write_ws2812();  //transmit the data to the neopixel strip.
+		  led_data[i] = 0b00000010;  //use low values so that it does blind the camera
+	  //HAL_TIM_PWM_Stop_IT(&htim3, TIM_CHANNEL_1);
+	  write_ws2812();
 
 	  HAL_Delay(1000);
 
@@ -300,7 +324,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
@@ -406,6 +430,65 @@ static void MX_I2C2_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 200;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 100;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -484,14 +567,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -502,6 +577,50 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if(htim == &htim3){
+		//TIM2->SR &= ~TIM_SR_UIF; // clear UIF flag
+		if(led_pos<sizeof(led_data)){
+			if(led_data[led_pos] & led_mask){
+				//TIM2->CCR1 = high_CCR1;
+				//TIM2->ARR = high_ARR;
+				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, (uint32_t)high_CCR1);
+				__HAL_TIM_SET_AUTORELOAD(htim, (uint32_t)high_ARR);
+			}else{
+				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, (uint32_t)low_CCR1);
+				__HAL_TIM_SET_AUTORELOAD(htim, (uint32_t)low_ARR);
+				//TIM2->CCR1 = low_CCR1;
+				//TIM2->ARR = low_ARR;
+			}
+			if(led_mask==1){
+				led_mask = 0b10000000;
+				led_pos++;
+			}else led_mask = led_mask >> 1;
+		}else{
+			//HAL_TIM_Base_Stop_IT(htim);
+			//TIM3->CCR1 = 0; //set to zero so that pin stays low
+			//TIM3->ARR = treset_ARR; //set to timing for reset LEDs
+			//TIM3->DIER &= ~TIM_DIER_UIE; //disable interrupt flag to end transmission.
+			HAL_TIM_PWM_Stop_IT(&htim3, TIM_CHANNEL_1);
+		}
+	}
+
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
+
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
+
+}
+
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
+
+
+}
+
 
 /* USER CODE END 4 */
 
