@@ -140,7 +140,19 @@ int main(void)
 		  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
 	  }
 		*/
-	  led_fill(255,255,255);
+	  led_fill(0,0,255);
+	  led_show();
+	  HAL_Delay(500);
+	  led_fill(0,0,0);
+	  led_show();
+	  HAL_Delay(500);
+	  led_fill(0,255,0);
+	  led_show();
+	  HAL_Delay(500);
+	  led_fill(0,0,0);
+	  led_show();
+	  HAL_Delay(500);
+	  led_fill(255,0,0);
 	  led_show();
 	  HAL_Delay(500);
 	  led_fill(0,0,0);
