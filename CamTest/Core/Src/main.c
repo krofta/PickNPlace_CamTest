@@ -19,14 +19,16 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "ws2812.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ws2812.h"
+#include "ov7670.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
 
 /* USER CODE END PTD */
 
@@ -47,9 +49,9 @@ DMA_HandleTypeDef hdma_dcmi;
 I2C_HandleTypeDef hi2c2;
 
 TIM_HandleTypeDef htim3;
-DMA_HandleTypeDef hdma_tim3_ch1_trig;
+DMA_HandleTypeDef hdma_tim3_ch2;
 
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart7;
 
 /* USER CODE BEGIN PV */
 
@@ -60,9 +62,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_DCMI_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_UART7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -108,12 +110,12 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_DCMI_Init();
-  MX_USART1_UART_Init();
   MX_I2C2_Init();
   MX_TIM3_Init();
+  MX_UART7_Init();
   /* USER CODE BEGIN 2 */
-  for(unsigned int i = 0; i < IMG_ROWS * IMG_COLUMNS; i++){
-	  frame_buffer[i] = 0;
+  for(unsigned int i = 0; i < OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT; i++){
+	  framebuffer[i] = 0;
   }
   ov7670_init(&hdcmi, &hdma_dcmi, &hi2c2);
   ov7670_config(1);
@@ -126,6 +128,10 @@ int main(void)
 
   //HAL_DMA_RegisterCallback(&hdma_dcmi, HAL_DMA_XFER_CPLT_CB_ID, &DCMICompleteCallback);
   //HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
+  static int btn_set = 0;
+  uint8_t buffer[10] = {
+		  0,0,0,0,0,0,0,0,0,0
+  };
 
   /* USER CODE END 2 */
 
@@ -140,24 +146,37 @@ int main(void)
 		  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
 	  }
 		*/
-	  led_fill(0,0,255);
-	  led_show();
-	  HAL_Delay(500);
-	  led_fill(0,0,0);
-	  led_show();
-	  HAL_Delay(500);
-	  led_fill(0,255,0);
-	  led_show();
-	  HAL_Delay(500);
-	  led_fill(0,0,0);
-	  led_show();
-	  HAL_Delay(500);
-	  led_fill(255,0,0);
-	  led_show();
-	  HAL_Delay(500);
-	  led_fill(0,0,0);
-	  led_show();
-	  HAL_Delay(500);
+	  if( GPIO_PIN_SET == HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) && (btn_set == 0)){
+		  btn_set++;
+		  led_fill(0,0,255);
+		  led_show();
+		  ov7670_startCap(OV7670_CAP_SINGLE_FRAME, &framebuffer);
+		  //HAL_UART_Receive(&huart7, buffer, sizeof(buffer), 1000);
+		  HAL_Delay(500);
+		  led_fill(0,0,0);
+		  led_show();
+
+		  uint16_t tmp[(OV7670_QVGA_WIDTH)+2];
+		  int length = (OV7670_QVGA_WIDTH *2) +2;
+		  for(int i = 0; i < OV7670_QVGA_HEIGHT; i++){
+			  memset(&buffer,0,10);
+			  tmp[0] = i;
+			  memcpy(&tmp[1], &framebuffer[OV7670_QVGA_WIDTH*i], OV7670_QVGA_WIDTH);
+			  HAL_UART_Transmit(&huart7, tmp,length , 1000);
+			  //HAL_Delay(10);
+			  HAL_UART_Receive(&huart7, &buffer, 10, 100);
+			  if(buffer[0] != "O" || buffer[1] != 'K'){
+				  btn_set++;
+				  break;
+			  }
+
+		  }
+
+		  //HAL_UART_Transmit(&huart7, framebuffer, sizeof(framebuffer), 1000);
+		  btn_set++;
+	  }else if(btn_set > 1){
+		  btn_set = 0;
+	  }
 
 
     /* USER CODE END WHILE */
@@ -216,8 +235,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_I2C2;
-  PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_I2C2;
+  PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_PCLK1;
   PeriphClkInitStruct.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
@@ -363,7 +382,7 @@ static void MX_TIM3_Init(void)
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -377,37 +396,37 @@ static void MX_TIM3_Init(void)
 }
 
 /**
-  * @brief USART1 Initialization Function
+  * @brief UART7 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART1_UART_Init(void)
+static void MX_UART7_Init(void)
 {
 
-  /* USER CODE BEGIN USART1_Init 0 */
+  /* USER CODE BEGIN UART7_Init 0 */
 
-  /* USER CODE END USART1_Init 0 */
+  /* USER CODE END UART7_Init 0 */
 
-  /* USER CODE BEGIN USART1_Init 1 */
+  /* USER CODE BEGIN UART7_Init 1 */
 
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  /* USER CODE END UART7_Init 1 */
+  huart7.Instance = UART7;
+  huart7.Init.BaudRate = 115200;
+  huart7.Init.WordLength = UART_WORDLENGTH_8B;
+  huart7.Init.StopBits = UART_STOPBITS_1;
+  huart7.Init.Parity = UART_PARITY_NONE;
+  huart7.Init.Mode = UART_MODE_TX_RX;
+  huart7.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart7.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart7.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart7.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart7) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
+  /* USER CODE BEGIN UART7_Init 2 */
 
-  /* USER CODE END USART1_Init 2 */
+  /* USER CODE END UART7_Init 2 */
 
 }
 
@@ -422,9 +441,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMA1_Stream4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA2_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
@@ -442,14 +461,21 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : BTN_Pin */
+  GPIO_InitStruct.Pin = BTN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BTN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA8 */
   GPIO_InitStruct.Pin = GPIO_PIN_8;

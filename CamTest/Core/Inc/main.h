@@ -68,19 +68,11 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
-static volatile unsigned int frame_flag = 0;
-static volatile unsigned int send_sync_frame = 0;
-volatile uint16_t frame_buffer[IMG_ROWS * IMG_COLUMNS];
-
-void DCMICompleteCallback(DCMI_HandleTypeDef *hdcmi);
-void DCMIErrorCallback(DCMI_HandleTypeDef *hdcmi);
-
-
-
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BTN_Pin GPIO_PIN_13
+#define BTN_GPIO_Port GPIOC
 #define LED_Pin GPIO_PIN_7
 #define LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */

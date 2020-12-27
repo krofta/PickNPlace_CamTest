@@ -11,4 +11,5 @@
 #define SLAVE_ADDR 0x42
 
 
+
 #endif /* OV7670_OV7670CONFIG_H_ */

@@ -13,8 +13,7 @@
 #include "ov7670Reg.h"
 
 /*** Internal Const Values, Macros ***/
-#define OV7670_QVGA_WIDTH  320
-#define OV7670_QVGA_HEIGHT 240
+
 
 
 /*** Internal Static Variables ***/
@@ -58,8 +57,10 @@ RET ov7670_init(DCMI_HandleTypeDef *p_hdcmi, DMA_HandleTypeDef *p_hdma_dcmi, I2C
 RET ov7670_config(uint32_t mode)
 {
 	// Test if cam react to commands
+/*
 	for(int i = 0; i<0xFF; i++)
 		OV7670_bak[i] = 0;
+*/
 
   ov7670_stopCap();
   ov7670_write(0x12, 0x80);  // RESET
@@ -67,7 +68,7 @@ RET ov7670_config(uint32_t mode)
   for(int i = 0; OV7670_reg[i][0] != REG_BATT; i++) {
     ov7670_write(OV7670_reg[i][0], OV7670_reg[i][1]);
     HAL_Delay(1);
-    ov7670_read(OV7670_reg[i][0],&OV7670_bak[i]);
+    //ov7670_read(OV7670_reg[i][0],&OV7670_bak[i]);
 
   }
   return RET_OK;

@@ -10,7 +10,7 @@
 
 #define REG_BATT 0xFF
 
-uint8_t OV7670_bak[0xFF];
+//uint8_t OV7670_bak[0xFF];
 const uint8_t OV7670_reg[][2] = {
   /* Color mode related */
   {0x12, 0x14},   // QVGA, RGB

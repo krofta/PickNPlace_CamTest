@@ -23,7 +23,7 @@
 #define LED_COUNT 29						// Count of led in your strip (LED_COUNT%12 = 0)
 #define BRIGHT 5 							// 0-255
 #define TIM_HANDLE	htim3					// use "htimX", where X is number of ur timer
-#define TIM_CH	TIM_CHANNEL_1				// use "TIM_CHANNEL_X", where X is number of ur channel
+#define TIM_CH	TIM_CHANNEL_2				// use "TIM_CHANNEL_X", where X is number of ur channel
 //--------------------------------------------------
 /*SYS DEFINES*/
 #define DELAY_LEN 50						// Delay period

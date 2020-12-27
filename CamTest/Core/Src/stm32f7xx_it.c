@@ -59,7 +59,7 @@
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_dcmi;
 extern DCMI_HandleTypeDef hdcmi;
-extern DMA_HandleTypeDef hdma_tim3_ch1_trig;
+extern DMA_HandleTypeDef hdma_tim3_ch2;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -203,17 +203,18 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles DMA1 stream4 global interrupt.
+  * @brief This function handles DMA1 stream5 global interrupt.
   */
-void DMA1_Stream4_IRQHandler(void)
+void DMA1_Stream5_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Stream4_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
 
-  /* USER CODE END DMA1_Stream4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_tim3_ch1_trig);
-  /* USER CODE BEGIN DMA1_Stream4_IRQn 1 */
+  /* USER CODE END DMA1_Stream5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_tim3_ch2);
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
   HAL_TIM_PWM_Stop_DMA(&TIM_HANDLE, TIM_CH);
-  /* USER CODE END DMA1_Stream4_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 1 */
 }
 
 /**
@@ -226,6 +227,7 @@ void DMA2_Stream1_IRQHandler(void)
   /* USER CODE END DMA2_Stream1_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_dcmi);
   /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
+  HAL_DCMI_Stop(&hdcmi);
 
 
   /* USER CODE END DMA2_Stream1_IRQn 1 */

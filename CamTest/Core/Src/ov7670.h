@@ -7,6 +7,10 @@
 
 #ifndef OV7670_OV7670_H_
 #define OV7670_OV7670_H_
+#include "common.h"
+
+#define OV7670_QVGA_WIDTH  320
+#define OV7670_QVGA_HEIGHT 240
 
 #define OV7670_MODE_QVGA_RGB565 0
 #define OV7670_MODE_QVGA_YUV    1
