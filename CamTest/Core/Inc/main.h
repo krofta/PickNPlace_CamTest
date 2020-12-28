@@ -73,6 +73,12 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define BTN_Pin GPIO_PIN_13
 #define BTN_GPIO_Port GPIOC
+#define ST7789_RST_Pin GPIO_PIN_12
+#define ST7789_RST_GPIO_Port GPIOB
+#define ST7789_DC_Pin GPIO_PIN_14
+#define ST7789_DC_GPIO_Port GPIOB
+#define ST7789_CS_Pin GPIO_PIN_10
+#define ST7789_CS_GPIO_Port GPIOD
 #define LED_Pin GPIO_PIN_7
 #define LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */

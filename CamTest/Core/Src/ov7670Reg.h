@@ -15,9 +15,12 @@ const uint8_t OV7670_reg[][2] = {
   /* Color mode related */
   {0x12, 0x14},   // QVGA, RGB
   {0x8C, 0x00},   // RGB444 Disable
-  {0x40, 0x10 + 0xc0},   // RGB565, 00 - FF
-  {0x3A, 0x04 + 8},   // UYVY (why?)
-  {0x3D, 0x80 + 0x00},   // gamma enable, UV auto adjust, UYVY
+  {0x40, 0xD0},   // RGB565, 00 - FF
+  //{0x40, 0x10 + 0xc0},   // RGB565, 00 - FF
+  {0x3A, 0x00},   // YUYV
+  //{0x3A, 0x04 + 8},   // UYVY (why?)
+  {0x3D, 0xC0 + 0x00},   // gamma enable, UV auto adjust, YUYV
+  //{0x3D, 0x80 + 0x00},   // gamma enable, UV auto adjust, UYVY
   {0xB0, 0x84}, // important
 
   /* clock related */
@@ -66,7 +69,7 @@ const uint8_t OV7670_reg[][2] = {
 
 
   /* gamma curve */
-#if 1
+#if 0
   {0x7b, 16},
   {0x7c, 30},
   {0x7d, 53},
@@ -83,7 +86,7 @@ const uint8_t OV7670_reg[][2] = {
   {0x88, 230},
   {0x89, 244},
   {0x7a, 16},
-#else
+#elif 0
   /* gamma = 1 */
   {0x7b, 4},
   {0x7c, 8},
@@ -101,6 +104,42 @@ const uint8_t OV7670_reg[][2] = {
   {0x88, 176},
   {0x89, 208},
   {0x7a, 64},
+#elif 0
+  {0x7a, 10},
+  {0x7b, 16},
+  {0x7c, 32},
+  {0x7d, 48},
+  {0x7e, 64},
+  {0x7f, 80},
+  {0x80, 96},
+  {0x81, 112},
+  {0x82, 128},
+  {0x83, 144},
+  {0x84, 160},
+  {0x85, 176},
+  {0x86, 192},
+  {0x87, 208},
+  {0x88, 224},
+  {0x89, 240},
+
+#else
+  {0x7a, 10},
+  {0x7b, 16},
+  {0x7c, 32},
+  {0x7d, 48},
+  {0x7e, 64},
+  {0x7f, 80},
+  {0x80, 96},
+  {0x81, 106},
+  {0x82, 116},
+  {0x83, 126},
+  {0x84, 136},
+  {0x85, 146},
+  {0x86, 156},
+  {0x87, 166},
+  {0x88, 176},
+  {0x89, 240},
+
 #endif
 
   /* fps */
