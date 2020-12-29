@@ -134,6 +134,8 @@ int main(void)
   led_init();
 
   ST7789_Init();
+  HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
+  uint32_t last_enc = 0;
 
 
 
@@ -146,6 +148,8 @@ int main(void)
 		  'M','o','i','n',0
   };
   uint8_t recv[10] = {0,0,0,0,0,0,0,0,0,0};
+
+
 
   /* USER CODE END 2 */
 
@@ -160,6 +164,23 @@ int main(void)
 		  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
 	  }
 		*/
+	  if(last_enc !=  htim8.Instance->CNT){
+
+	  }
+	  last_enc = htim8.Instance->CNT;
+	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == GPIO_PIN_RESET){
+		  led_fill(50,50,50);
+		  led_show();
+		  HAL_Delay(500);
+		  led_fill(0,0,0);
+		  led_show();
+	  }
+	  ov7670_startCap(OV7670_CAP_SINGLE_FRAME, &framebuffer);
+	  HAL_Delay(500);
+	  ov7670_stopCap();
+	  ST7789_DrawImage(0,0,320,240,framebuffer);
+	  continue;
+
 
 	  //if( GPIO_PIN_SET == HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) && (btn_set == 0)){
 	  if(HAL_UART_Receive(&huart3, &recv, 2, 1000) == HAL_OK){
@@ -189,8 +210,8 @@ int main(void)
 			  */
 
 
-			  led_fill(50,50,50);
-			  led_show();
+//			  led_fill(50,50,50);
+//			  led_show();
 			  ov7670_startCap(OV7670_CAP_SINGLE_FRAME, &framebuffer);
 			  //HAL_UART_Receive(&huart3, buffer, sizeof(buffer), 1000);
 			  HAL_Delay(500);
@@ -218,6 +239,7 @@ int main(void)
 		  }
 		  //btn_set++;
 	  }
+
 /*
 	  else if(btn_set > 1){
 		  btn_set = 0;
@@ -660,6 +682,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(ST7789_CS_GPIO_Port, ST7789_CS_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOG, OV7670_PWD_Pin|OV7670_RET_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : BTN_Pin */
   GPIO_InitStruct.Pin = BTN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -679,6 +704,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(ST7789_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : OV7670_PWD_Pin OV7670_RET_Pin */
+  GPIO_InitStruct.Pin = OV7670_PWD_Pin|OV7670_RET_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /*Configure GPIO pin : ENC_BTN_Pin */
   GPIO_InitStruct.Pin = ENC_BTN_Pin;

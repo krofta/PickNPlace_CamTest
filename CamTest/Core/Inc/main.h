@@ -79,6 +79,10 @@ void Error_Handler(void);
 #define ST7789_DC_GPIO_Port GPIOB
 #define ST7789_CS_Pin GPIO_PIN_10
 #define ST7789_CS_GPIO_Port GPIOD
+#define OV7670_PWD_Pin GPIO_PIN_5
+#define OV7670_PWD_GPIO_Port GPIOG
+#define OV7670_RET_Pin GPIO_PIN_6
+#define OV7670_RET_GPIO_Port GPIOG
 #define ENC_BTN_Pin GPIO_PIN_8
 #define ENC_BTN_GPIO_Port GPIOG
 #define ENC_P2_Pin GPIO_PIN_6

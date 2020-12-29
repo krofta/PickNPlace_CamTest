@@ -10,6 +10,9 @@
 
 #define SLAVE_ADDR 0x42
 
+#define CAMERA_RESET_GPIO_Port OV7670_RET_GPIO_Port
+#define CAMERA_RESET_Pin OV7670_RET_Pin
+
 
 
 #endif /* OV7670_OV7670CONFIG_H_ */
