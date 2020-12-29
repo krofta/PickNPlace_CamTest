@@ -79,6 +79,12 @@ void Error_Handler(void);
 #define ST7789_DC_GPIO_Port GPIOB
 #define ST7789_CS_Pin GPIO_PIN_10
 #define ST7789_CS_GPIO_Port GPIOD
+#define ENC_BTN_Pin GPIO_PIN_8
+#define ENC_BTN_GPIO_Port GPIOG
+#define ENC_P2_Pin GPIO_PIN_6
+#define ENC_P2_GPIO_Port GPIOC
+#define ENC_P1_Pin GPIO_PIN_7
+#define ENC_P1_GPIO_Port GPIOC
 #define LED_Pin GPIO_PIN_7
 #define LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
