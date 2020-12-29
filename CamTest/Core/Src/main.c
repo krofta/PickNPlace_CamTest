@@ -149,7 +149,7 @@ int main(void)
   };
   uint8_t recv[10] = {0,0,0,0,0,0,0,0,0,0};
 
-
+  uint8_t toggle_led = 0;
 
   /* USER CODE END 2 */
 
@@ -164,19 +164,20 @@ int main(void)
 		  HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
 	  }
 		*/
-	  if(last_enc !=  htim8.Instance->CNT){
 
-	  }
 	  last_enc = htim8.Instance->CNT;
 	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == GPIO_PIN_RESET){
-		  led_fill(50,50,50);
-		  led_show();
-		  HAL_Delay(500);
-		  led_fill(0,0,0);
-		  led_show();
+		  toggle_led ^= 1;
+		  if(toggle_led){
+			  led_fill(10,10,10);
+			  led_show();
+		  }else{
+			  led_fill(0,0,0);
+			  led_show();
+		  }
 	  }
 	  ov7670_startCap(OV7670_CAP_SINGLE_FRAME, &framebuffer);
-	  HAL_Delay(500);
+	  HAL_Delay(100);
 	  ov7670_stopCap();
 	  ST7789_DrawImage(0,0,320,240,framebuffer);
 	  continue;

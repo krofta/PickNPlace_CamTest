@@ -64,7 +64,7 @@
 #define CHLF		0x33
 #define ARBLM		0x34
 //#define RSVD		0x35	// reserved
-#define ADC			0x37	// adc control
+#define OVADC		0x37	// adc control
 #define ACOM		0x38	// adc and analog common control
 #define AFON		0x39	// adc offset control
 #define TSLB		0x3A	// line buffer test option
@@ -180,22 +180,107 @@
 
 
 //uint8_t OV7670_bak[0xFF];
-const uint8_t OV7670_reg[][2] = {
-
-
-
-  /* Color mode related */
+#if 1
+const uint8_t OV7670_reg[][2] =
+{
+   //Color mode related
   {COM7, 0x14},   // QVGA, RGB
   {0x8C, 0x00},   // RGB444 Disable
-  {0x40, 0xD0},   // RGB565, 00 - FF
-  //{0x40, 0x10 + 0xc0},   // RGB565, 00 - FF
-  {0x3A, 0x00},   // YUYV
+  {COM15, 0x10 + 0xc0},   // RGB565, 00 - FF
   //{0x3A, 0x04 + 8},   // UYVY (why?)
-  {0x3D, 0xC0 + 0x00},   // gamma enable, UV auto adjust, YUYV
-  //{0x3D, 0x80 + 0x00},   // gamma enable, UV auto adjust, UYVY
+  {0x3A, 0b00000100},   // Y V Y U
+  {COM13, 0x80 + 0x00},   // gamma enable, UV auto adjust, UYVY
+  {0xB0, 0x84}, // Color mode (Not documented??)
+
+  // clock related
+  {COM3, 0x04},  // DCW enable
+  {COM14, 0x19},  // manual scaling, pclk/=2
+  {SCAL_XSC, 0x3A},  // scaling_xsc
+  {SCAL_YSC, 0x35},  // scaling_ysc
+  {SCAL_DCW, 0x11}, // down sample by 2
+  {SCAL_PCLK, 0xf1}, // DSP clock /= 2
+
+  // funzt
+  // windowing (empirically decided...)
+  // fps
+  {HSTART, 0x16},   // HSTART
+  {HSTOP, 0x04},   // HSTOP
+  {HREF, 0x80},   // HREF
+  {VSTART, 0x03},   // VSTART =  14 ( = 3 * 4 + 2)
+  {VSTOP, 0x7b},   // VSTOP  = 494 ( = 123 * 4 + 2)
+  {VREF, 0x0a},   // VREF (VSTART_LOW = 2, VSTOP_LOW = 2)
+
+
+  // color matrix coefficient
+#if 0
+  {MTX1, 0xb3},
+  {MTX2, 0xb3},
+  {MTX3, 0x00},
+  {MTX4, 0x3d},
+  {MTX5, 0xa7},
+  {MTX6, 0xe4},
+  {MTXS, 0x9e},
+#else
+  {MTX1, 0x80},
+  {MTX2, 0x80},
+  {MTX3, 0x00},
+  {MTX4, 0x22},
+  {MTX5, 0x5e},
+  {MTX6, 0x80},
+  {MTXS, 0x9e},
+#endif
+
+  //
+//  {COM8, 0x84},
+//  {COM9, 0x0a},   // AGC Ceiling = 2x
+//  {B_LMT, 0x2f},   // AWB B Gain Range (empirically decided)
+//                  // without this bright scene becomes yellow (purple). might be because of color matrix
+//  {R_LMT, 0x98},   // AWB R Gain Range (empirically decided)
+//  {G_LMT, 0x70},   // AWB G Gain Range (empirically decided)
+ {COM16, 0x38},   // edge enhancement, de-noise, AWG gain enabled
+
+
+  // gamma curve
+  {GAM1,  4},
+  {GAM2,  8},
+  {GAM3,  16},
+  {GAM4,  32},
+  {GAM5,  40},
+  {GAM6,  48},
+  {GAM7,  56},
+  {GAM8,  64},
+  {GAM9,  72},
+  {GAM10, 80},
+  {GAM11, 96},
+  {GAM12, 112},
+  {GAM13, 144},
+  {GAM14, 176},
+  {GAM15, 208},
+  //{0x7a, ((256 - GAM15)* 40/30)},
+  {0x7a, 64},
+
+  // fps
+  {DBLV, 0x4a}, //PLL  x4
+  {CLKRC, 0x00}, // pre-scalar = 1/1
+
+  // others
+  //{MVFP, 0x31}, //mirror flip
+
+
+  {REG_BATT, REG_BATT},
+};
+#else
+const uint8_t OV7670_reg[][2] = {
+
+  {0x12, 0x14},   // QVGA, RGB
+  {0x8C, 0x00},   // RGB444 Disable
+  {0x40, 0x10 + 0xc0},   // RGB565, 00 - FF
+  //{0x3A, 0x04 + 8},   // UYVY (why?)
+  {0x3A, 0b00000100},   // Y V Y U
+  {0x3D, 0x80 + 0x00},   // gamma enable, UV auto adjust, UYVY
   {0xB0, 0x84}, // important
 
-  /* clock related */
+
   {0x0C, 0x04},  // DCW enable
   {0x3E, 0x19},  // manual scaling, pclk/=2
   {0x70, 0x3A},  // scaling_xsc
@@ -203,7 +288,7 @@ const uint8_t OV7670_reg[][2] = {
   {0x72, 0x11}, // down sample by 2
   {0x73, 0xf1}, // DSP clock /= 2
 
-  /* windowing (empirically decided...) */
+
   {0x17, 0x16},   // HSTART
   {0x18, 0x04},   // HSTOP
   {0x32, 0x80},   // HREF
@@ -211,7 +296,7 @@ const uint8_t OV7670_reg[][2] = {
   {0x1a, 0x7b},   // VSTOP  = 494 ( = 123 * 4 + 2)
   {0x03, 0x0a},   // VREF (VSTART_LOW = 2, VSTOP_LOW = 2)
 
-  /* color matrix coefficient */
+
 #if 0
   {0x4f, 0xb3},
   {0x50, 0xb3},
@@ -230,7 +315,6 @@ const uint8_t OV7670_reg[][2] = {
   {0x58, 0x9e},
 #endif
 
-  /* 3a */
 //  {0x13, 0x84},
 //  {0x14, 0x0a},   // AGC Ceiling = 2x
 //  {0x5F, 0x2f},   // AWB B Gain Range (empirically decided)
@@ -240,7 +324,7 @@ const uint8_t OV7670_reg[][2] = {
   {0x41, 0x38},   // edge enhancement, de-noise, AWG gain enabled
 
 
-  /* gamma curve */
+
 #if 1
   {0x7b, 16},
   {0x7c, 30},
@@ -258,8 +342,8 @@ const uint8_t OV7670_reg[][2] = {
   {0x88, 230},
   {0x89, 244},
   {0x7a, 16},
-#elif 0
-  /* gamma = 1 */
+#else
+
   {0x7b, 4},
   {0x7c, 8},
   {0x7d, 16},
@@ -276,54 +360,21 @@ const uint8_t OV7670_reg[][2] = {
   {0x88, 176},
   {0x89, 208},
   {0x7a, 64},
-#elif 0
-  {0x7a, 10},
-  {0x7b, 16},
-  {0x7c, 32},
-  {0x7d, 48},
-  {0x7e, 64},
-  {0x7f, 80},
-  {0x80, 96},
-  {0x81, 112},
-  {0x82, 128},
-  {0x83, 144},
-  {0x84, 160},
-  {0x85, 176},
-  {0x86, 192},
-  {0x87, 208},
-  {0x88, 224},
-  {0x89, 240},
-
-#else
-  {0x7a, 10},
-  {0x7b, 16},
-  {0x7c, 32},
-  {0x7d, 48},
-  {0x7e, 64},
-  {0x7f, 80},
-  {0x80, 96},
-  {0x81, 106},
-  {0x82, 116},
-  {0x83, 126},
-  {0x84, 136},
-  {0x85, 146},
-  {0x86, 156},
-  {0x87, 166},
-  {0x88, 176},
-  {0x89, 240},
-
 #endif
 
-  /* fps */
-//  {0x6B, 0x4a}, //PLL  x4
+
+  {0x6B, 0x4a}, //PLL  x4
   {0x11, 0x00}, // pre-scalar = 1/1
 
-  /* others */
-  {0x1E, 0x31}, //mirror flip
+
+  //{0x1E, 0x31}, //mirror flip
 //  {0x42, 0x08}, // color bar
 
   {REG_BATT, REG_BATT},
 };
+
+#endif
+
 
 
 #endif /* OV7670_OV7670REG_H_ */
