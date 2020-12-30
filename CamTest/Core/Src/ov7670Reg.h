@@ -210,6 +210,15 @@ const uint8_t OV7670_reg[][2] =
   {VSTOP, 0x7b},   // VSTOP  = 494 ( = 123 * 4 + 2)
   {VREF, 0x0a},   // VREF (VSTART_LOW = 2, VSTOP_LOW = 2)
 
+  // To achieve the best image quality, using "maximum" exposure and "minimum" gain for the
+  // highest S/N ratio is recommended. When operating in low-light condition,
+  {COM8, 0b00100010}, // disable automatic gain control - disable automatic exposure control
+  {GAIN, 0x00},	// 0dB GAIN
+  {AECHH, 0x3F}, // exposure bits 10-15
+  {AECH, 0xFF},  // exposure bits 2-9
+  {COM1, 0x03},	 // bit 0,1 - exposure bits 0-1
+
+
 
   // color matrix coefficient
 #if 0

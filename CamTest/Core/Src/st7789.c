@@ -29,12 +29,40 @@ static void ST7789_WriteData(uint8_t *buff, size_t buff_size)
 	while (buff_size > 0) {
 		uint16_t chunk_size = buff_size > 65535 ? 65535 : buff_size;
 		HAL_SPI_Transmit(&ST7789_SPI_PORT, buff, chunk_size, HAL_MAX_DELAY);
+		//HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, buff, buff_size);
 		buff += chunk_size;
 		buff_size -= chunk_size;
 	}
 
 	ST7789_UnSelect();
 }
+
+/**
+ * @brief Write data to ST7789 controller
+ * @param buff -> pointer of data buffer
+ * @param buff_size -> size of the data buffer
+ * @return none
+ */
+/*
+void ST7789_WriteDataDMA(uint8_t *buff, size_t buff_size, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
+
+	if ((x >= ST7789_WIDTH) || (y >= ST7789_HEIGHT))
+		return;
+	if ((x + w - 1) >= ST7789_WIDTH)
+		return;
+	if ((y + h - 1) >= ST7789_HEIGHT)
+		return;
+
+	ST7789_Select();
+	ST7789_DC_Set();
+	ST7789_SetAddressWindow(x, y, x + w - 1, y + h - 1);
+	HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, buff, buff_size);
+
+	// unselect in interrupt routine
+	//ST7789_UnSelect();
+}
+*/
 /**
  * @brief Write data to ST7789 controller, simplify for 8bit data.
  * data -> data to write
@@ -79,7 +107,7 @@ void ST7789_SetRotation(uint8_t m)
  * @param xi&yi -> coordinates of window
  * @return none
  */
-static void ST7789_SetAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+void ST7789_SetAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 {
 	ST7789_Select();
 	uint16_t x_start = x0 + X_SHIFT, x_end = x1 + X_SHIFT;

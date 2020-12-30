@@ -243,6 +243,8 @@ void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
 /* Command functions */
 void ST7789_TearEffect(uint8_t tear);
 
+//void ST7789_WriteDataDMA(uint8_t *buff, size_t buff_size, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+
 /* Simple test function. */
 void ST7789_Test(void);
 

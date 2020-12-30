@@ -29,12 +29,14 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
+
 
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define BEST_LIGHTNING 55
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -50,6 +52,7 @@ DMA_HandleTypeDef hdma_dcmi;
 I2C_HandleTypeDef hi2c2;
 
 SPI_HandleTypeDef hspi2;
+DMA_HandleTypeDef hdma_spi2_tx;
 
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
@@ -59,6 +62,12 @@ DMA_HandleTypeDef hdma_tim3_ch2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
+uint8_t btn_enc = 0;
+uint8_t pic_captured = 0;
+uint8_t pic_written = 1;
+uint8_t led_val;
+uint8_t led_val_changed = 0;
 
 /* USER CODE END PV */
 
@@ -134,12 +143,8 @@ int main(void)
   led_init();
 
   ST7789_Init();
-  HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start_IT(&htim8, TIM_CHANNEL_ALL);
   uint32_t last_enc = 0;
-
-
-
-
 
   //HAL_DMA_RegisterCallback(&hdma_dcmi, HAL_DMA_XFER_CPLT_CB_ID, &DCMICompleteCallback);
   //HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, &frame_buffer, IMG_ROWS * IMG_COLUMNS/2);
@@ -166,20 +171,37 @@ int main(void)
 		*/
 
 	  last_enc = htim8.Instance->CNT;
-	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == GPIO_PIN_RESET){
+
+	  if(led_val_changed && toggle_led){
+		  led_fill(led_val,led_val,led_val);
+		  led_show();
+		  led_val_changed = 0;
+	  }
+
+	  if(btn_enc){
 		  toggle_led ^= 1;
 		  if(toggle_led){
-			  led_fill(10,10,10);
+			  led_fill(led_val,led_val,led_val);
 			  led_show();
 		  }else{
 			  led_fill(0,0,0);
 			  led_show();
 		  }
+		  HAL_Delay(100);
+		  btn_enc = 0;
+		  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 	  }
-	  ov7670_startCap(OV7670_CAP_SINGLE_FRAME, &framebuffer);
-	  HAL_Delay(100);
-	  ov7670_stopCap();
-	  ST7789_DrawImage(0,0,320,240,framebuffer);
+	  if(pic_captured == 0 /*&& pic_written == 1*/){
+		  ov7670_startCap(OV7670_CAP_SINGLE_FRAME, &framebuffer);
+		  pic_written = 0;
+		  pic_captured = 2;
+	  }
+	  if(pic_captured == 1){
+		  pic_captured = 0;
+		  ov7670_stopCap();
+		  //ST7789_WriteDataDMA(framebuffer, sizeof(framebuffer),0,0,320,240);
+		  ST7789_DrawImage(0,0,320,240,framebuffer);
+	  }
 	  continue;
 
 
@@ -573,9 +595,9 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0;
+  htim8.Init.Prescaler = 2;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 65535;
+  htim8.Init.Period = 255;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
   htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -600,6 +622,8 @@ static void MX_TIM8_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM8_Init 2 */
+  htim8.Instance->CNT = BEST_LIGHTNING;
+  led_val = htim8.Instance->CNT;
 
   /* USER CODE END TIM8_Init 2 */
 
@@ -651,6 +675,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
@@ -713,11 +740,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : ENC_BTN_Pin */
-  GPIO_InitStruct.Pin = ENC_BTN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : ENC_BTN_EXTI8_Pin */
+  GPIO_InitStruct.Pin = ENC_BTN_EXTI8_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(ENC_BTN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(ENC_BTN_EXTI8_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA8 */
   GPIO_InitStruct.Pin = GPIO_PIN_8;
@@ -726,6 +753,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 

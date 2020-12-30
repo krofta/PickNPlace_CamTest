@@ -83,8 +83,9 @@ void Error_Handler(void);
 #define OV7670_PWD_GPIO_Port GPIOG
 #define OV7670_RET_Pin GPIO_PIN_6
 #define OV7670_RET_GPIO_Port GPIOG
-#define ENC_BTN_Pin GPIO_PIN_8
-#define ENC_BTN_GPIO_Port GPIOG
+#define ENC_BTN_EXTI8_Pin GPIO_PIN_8
+#define ENC_BTN_EXTI8_GPIO_Port GPIOG
+#define ENC_BTN_EXTI8_EXTI_IRQn EXTI9_5_IRQn
 #define ENC_P2_Pin GPIO_PIN_6
 #define ENC_P2_GPIO_Port GPIOC
 #define ENC_P1_Pin GPIO_PIN_7
