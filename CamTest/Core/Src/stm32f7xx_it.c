@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "ws2812.h"
 #include "st7789.h"
+#include "menu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,6 +71,8 @@ extern uint8_t pic_captured;
 extern uint8_t pic_written;
 extern uint8_t led_val;
 extern uint8_t led_val_changed;
+extern uint16_t cursorLine;
+extern uint8_t actual_menu;
 
 /* USER CODE END EV */
 
@@ -295,8 +298,18 @@ void TIM8_CC_IRQHandler(void)
 	  led_val_changed = 1;
   }
   */
-  led_val = htim8.Instance->CNT;
-  led_val_changed = 1;
+
+  switch(actual_menu){
+  case ACT_MENU_MAIN:
+	  cursorLine = htim8.Instance->CNT;
+	  break;
+  case ACT_MENU_LIGHT:
+	  led_val = htim8.Instance->CNT;
+	  led_val_changed = 1;
+	  break;
+  }
+
+
 
 
 
