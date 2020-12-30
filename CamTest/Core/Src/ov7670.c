@@ -11,6 +11,7 @@
 #include "ov7670.h"
 #include "ov7670Config.h"
 #include "ov7670Reg.h"
+#include "globals.h"
 
 /*** Internal Const Values, Macros ***/
 

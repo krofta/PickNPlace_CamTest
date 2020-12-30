@@ -26,6 +26,7 @@
 #include "ws2812.h"
 #include "st7789.h"
 #include "menu.h"
+#include "globals.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,13 +67,7 @@ extern SPI_HandleTypeDef hspi2;
 extern DMA_HandleTypeDef hdma_tim3_ch2;
 extern TIM_HandleTypeDef htim8;
 /* USER CODE BEGIN EV */
-extern uint8_t btn_enc;
-extern uint8_t pic_captured;
-extern uint8_t pic_written;
-extern uint8_t led_val;
-extern uint8_t led_val_changed;
-extern uint16_t cursorLine;
-extern uint8_t actual_menu;
+
 
 /* USER CODE END EV */
 
@@ -258,7 +253,7 @@ void EXTI9_5_IRQHandler(void)
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+  //HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
   btn_enc = 1;
   /* USER CODE END EXTI9_5_IRQn 1 */
 }
@@ -298,9 +293,12 @@ void TIM8_CC_IRQHandler(void)
 	  led_val_changed = 1;
   }
   */
+  //HAL_TIM_Encoder_Stop(&htim8, TIM_CHANNEL_ALL);
 
   switch(actual_menu){
   case ACT_MENU_MAIN:
+  case ACT_MENU_IMAGE_PROCESSING:
+  case ACT_MENU_PREPROCESSING:
 	  cursorLine = htim8.Instance->CNT;
 	  break;
   case ACT_MENU_LIGHT:

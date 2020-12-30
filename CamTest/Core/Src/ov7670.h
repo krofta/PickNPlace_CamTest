@@ -8,9 +8,11 @@
 #ifndef OV7670_OV7670_H_
 #define OV7670_OV7670_H_
 #include "common.h"
+#include "main.h"
+#define OV7670_PWD_PORT OV7670_PWD_GPIO_Port
+#define OV767_PWD_Pin OV7670_PWD_Pin
 
-#define OV7670_QVGA_WIDTH  320
-#define OV7670_QVGA_HEIGHT 240
+
 
 #define OV7670_MODE_QVGA_RGB565 0
 #define OV7670_MODE_QVGA_YUV    1
@@ -23,5 +25,7 @@ RET ov7670_config(uint32_t mode);
 RET ov7670_startCap(uint32_t capMode, uint32_t destAddress);
 RET ov7670_stopCap();
 void ov7670_registerCallback(void (*cbHsync)(uint32_t h), void (*cbVsync)(uint32_t v));
+#define ov7670_powerdown() HAL_GPIO_WritePin(OV7670_PWD_PORT, OV767_PWD_Pin, GPIO_PIN_RESET)
+#define ov7670_powerup() HAL_GPIO_WritePin(OV7670_PWD_PORT, OV767_PWD_Pin, GPIO_PIN_SET)
 
 #endif /* OV7670_OV7670_H_ */

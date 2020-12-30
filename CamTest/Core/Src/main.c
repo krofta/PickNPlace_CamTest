@@ -26,6 +26,7 @@
 #include "ov7670.h"
 #include "st7789.h"
 #include "menu.h"
+#include "globals.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,6 +65,8 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
+unsigned char img[MAXXDIM][MAXYDIM];
+unsigned char img2[MAXXDIM][MAXYDIM];
 uint8_t btn_enc = 0;
 uint8_t pic_captured = 0;
 uint8_t pic_written = 1;
@@ -156,6 +159,8 @@ int main(void)
   uint8_t recv[10] = {0,0,0,0,0,0,0,0,0,0};
 
   uint8_t toggle_led = 0;
+
+  // Camera in standby schicken, bis sie gebraucht wird
 
   /* USER CODE END 2 */
 
@@ -598,21 +603,21 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0;
+  htim8.Init.Prescaler = 2;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 255;
+  htim8.Init.Period = 65535;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 5;
-  sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
+  sConfig.IC1Filter = 15;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 5;
+  sConfig.IC2Filter = 15;
   if (HAL_TIM_Encoder_Init(&htim8, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -625,8 +630,8 @@ static void MX_TIM8_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM8_Init 2 */
-  htim8.Instance->CNT = BEST_LIGHTNING;
-  led_val = htim8.Instance->CNT;
+  //htim8.Instance->CNT = BEST_LIGHTNING;
+  //led_val = htim8.Instance->CNT;
 
   /* USER CODE END TIM8_Init 2 */
 

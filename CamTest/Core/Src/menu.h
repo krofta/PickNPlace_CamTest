@@ -20,9 +20,20 @@
 
 
 #define ACT_MENU_MAIN 0
-#define ACT_MENU_LIGHT 1
+#define ACT_MENU_IMAGE_PROCESSING 1
+#define ACT_MENU_PREPROCESSING 401
+#define ACT_MENU_LIGHT 10
 
-#define MAIN_MENU_OPTS 	3
+#define OPTS_MAIN_MENU 	3
+#define OPTS_IMAGE_PROCESSING 8
+#define OPTS_PREPROCESSING 8
+
+void setCursor(int pos);
+void delCursor(int pos);
+void print_menu(char *options[], int opt_count);
+void menu();
+void image_processing_menu(int opts);
+
 
 
 
