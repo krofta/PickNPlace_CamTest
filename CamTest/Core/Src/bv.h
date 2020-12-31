@@ -51,14 +51,14 @@ void count_white(unsigned char img[MAXXDIM][MAXYDIM]);
 */
 
 // Preprocessing
-void histogramm(unsigned char img[MAXXDIM][MAXYDIM], int ART);
-void grauwert_dehnung(unsigned char img[MAXXDIM][MAXYDIM]);
-void linearer_histo_ausgleich(unsigned char img[MAXXDIM][MAXYDIM], int anzGrauWerte);
-void calc_absolut_histo(unsigned char img[MAXXDIM][MAXYDIM], int grey[PIXEL_DEPTH]);
-void calc_kumulativ_histo(unsigned char img[MAXXDIM][MAXYDIM], int grey[PIXEL_DEPTH]);
-void median_filter(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iDIMxy);
-void mittelwert_filter(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iDIMxy, int Gewichtung);
-void gauss_filter(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int scale);
+void histogramm(unsigned char img[MAXYDIM][MAXXDIM], int ART);
+void grauwert_dehnung(unsigned char img[MAXYDIM][MAXXDIM]);
+void linearer_histo_ausgleich(unsigned char img[MAXYDIM][MAXXDIM], int anzGrauWerte);
+void calc_absolut_histo(unsigned char img[MAXYDIM][MAXXDIM], int grey[PIXEL_DEPTH]);
+void calc_kumulativ_histo(unsigned char img[MAXYDIM][MAXXDIM], int grey[PIXEL_DEPTH]);
+void median_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iDIMxy);
+void mittelwert_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iDIMxy, int Gewichtung);
+void gauss_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int scale);
 
 // Kantendetektion
 /*
@@ -94,17 +94,17 @@ double orientierung(Momente m);
 double winkel_rechteck(unsigned char img[MAXXDIM][MAXYDIM],Schwerpunkt s, unsigned int bloblabel);
 */
 // Anderes
-void frambuffer_test(unsigned char cMatrix[MAXXDIM][MAXYDIM]);
-void init_cMatrix(unsigned char cMatrix[MAXXDIM][MAXYDIM], unsigned char val);
-void init_iMatrix(uint16_t iMatrix[MAXXDIM][MAXYDIM] , uint16_t val);
+void frambuffer_test(unsigned char cMatrix[MAXYDIM][MAXXDIM]);
+void init_cMatrix(unsigned char cMatrix[MAXYDIM][MAXXDIM], unsigned char val);
+void init_iMatrix(uint16_t iMatrix[MAXYDIM][MAXXDIM] , uint16_t val);
 //void init_fMatrix(float fMatrix[MAXXDIM][MAXYDIM]);
-int  find_abs_extremum_iMatrix(int min_max, int iMatrix[MAXXDIM][MAXYDIM]);
+int  find_abs_extremum_iMatrix(int min_max, int iMatrix[MAXYDIM][MAXXDIM]);
 //float  find_abs_extremum_fMatrix(int min_max, float fMatrix[MAXXDIM][MAXYDIM]);
 void get_bin_koeff(float bin_ver[50], int n, float normierung);
 double fakultaet(int n);
 void bubblesort(int *array, int length);
 //void reset_blob_label(uint16_t iIMG[MAXXDIM][MAXYDIM], int oldLabel, int newLabel);
-void rgb_to_greyscale(uint16_t iIMG[MAXXDIM][MAXYDIM ], unsigned char img[MAXXDIM ][MAXYDIM]);
+void rgb_to_greyscale(uint16_t iIMG[MAXYDIM][MAXXDIM], unsigned char img[MAXYDIM][MAXXDIM]);
 
 
 

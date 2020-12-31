@@ -17,12 +17,9 @@
 #define HISTO_KUMULATIV 1
 #define HISTO_NORMAL 0
 // 153600 bytes
-//extern uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
-unsigned char img[MAXXDIM ][MAXYDIM];
-extern uint16_t framebuffer[OV7670_QVGA_WIDTH][OV7670_QVGA_HEIGHT ];
+extern uint16_t framebuffer[OV7670_QVGA_HEIGHT ][OV7670_QVGA_WIDTH];
 // 76800 bytes
-extern unsigned char img[MAXXDIM ][MAXYDIM];
-//extern unsigned char img2[MAXXDIM][MAXYDIM];
+extern unsigned char img[MAXYDIM ][MAXXDIM];
 // 9 bytes
 extern uint8_t btn_enc;
 extern uint8_t pic_captured;
