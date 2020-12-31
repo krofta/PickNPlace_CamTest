@@ -64,9 +64,10 @@ DMA_HandleTypeDef hdma_tim3_ch2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
-unsigned char img[MAXXDIM][MAXYDIM];
-unsigned char img2[MAXXDIM][MAXYDIM];
+//uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
+uint16_t framebuffer[OV7670_QVGA_WIDTH][OV7670_QVGA_HEIGHT ];
+unsigned char img[MAXXDIM ][MAXYDIM];
+//unsigned char img2[MAXXDIM][MAXYDIM];
 uint8_t btn_enc = 0;
 uint8_t pic_captured = 0;
 uint8_t pic_written = 1;
@@ -138,8 +139,10 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
-  for(unsigned int i = 0; i < OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT; i++){
-	  framebuffer[i] = 0;
+  for(unsigned int x = 0; x < OV7670_QVGA_WIDTH; x++){
+	  for(unsigned int y = 0; y < OV7670_QVGA_HEIGHT; y++){
+	  framebuffer[x][y] = 0;
+	  }
   }
   ov7670_init(&hdcmi, &hdma_dcmi, &hi2c2);
   ov7670_config(1);

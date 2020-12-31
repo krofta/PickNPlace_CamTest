@@ -66,15 +66,7 @@ void capture_image(int manu){
 	}
 	led_fill(0,0,0);
 	led_show();
-	for(int x = 0; x < MAXXDIM ; x++){
-		for(int y = 0; y < MAXYDIM; y++){
-			int tmp = x*y;
-			img[x][y] = (((framebuffer[tmp]& (0xF8<<8))>>8) +
-					(((framebuffer[tmp]& (0x07<<8))>>3) + ((framebuffer[tmp]& (0xF8))>>3)) +
-					((framebuffer[tmp]& (0x1F)))) / 3;
-		}
-	}
-
+	rgb_to_greyscale(framebuffer, img);
 	if(manu){
 		ST7789_WriteString(10, 0, "Press to continue", Font_11x18, WHITE, BLACK);
 		while(!btn_enc);
@@ -82,6 +74,22 @@ void capture_image(int manu){
 		btn_enc = 0;
 	}
 	return;
+}
+
+void show_image(int manu){
+
+	// GREEN 0x003F
+	// RED   0x07C0
+	// BLUE
+
+	greyscale_to_greyrgb(framebuffer, img);
+	ST7789_DrawImage(0,0,320,240,framebuffer);
+	if(manu){
+		ST7789_WriteString(10, 0, "Press to continue", Font_11x18, WHITE, BLACK);
+		while(!btn_enc);
+		HAL_Delay(400);
+		btn_enc = 0;
+	}
 }
 
 void setCursor(int pos){
@@ -94,7 +102,7 @@ void delCursor(int pos){
 }
 void print_menu(char *options[], int opt_count)
 {
-	ST7789_Fill_Color(BLACK);
+	ST7789_Fill_Color(BLUE);
 	for(int i = 0; i < opt_count; i++){
 		ST7789_WriteString(10, i*MENU_LINE_HEIGHT, options[i], Font_11x18, WHITE, BLACK);
 	}
@@ -125,18 +133,21 @@ void menu_pre_processing(){
 			switch (cursorLine)
 			{
 			case 0:
-
+				histogramm(img,HISTO_NORMAL);
 				break;
 			case 1:
-				// TODO: call function
+				histogramm(img,HISTO_KUMULATIV);
 				break;
 			case 2:
-				// TODO: call function
+				grauwert_dehnung(img);
 				break;
 			case 3:
-				// TODO: call function
+				linearer_histo_ausgleich(img, 32);
 				break;
 			case 4:
+				frambuffer_test(img);
+				show_image(1);
+				//frambuffer_test(img);
 				// TODO: call function
 				break;
 			case 5:
@@ -151,8 +162,8 @@ void menu_pre_processing(){
 			}
 			// when back in this menu -> call print menu function
 			htim8.Instance->CNT = cursorLine = last_cursorline = 0;
-			__HAL_TIM_SetAutoreload(&htim8,OPTS_IMAGE_PROCESSING-1);
-			print_menu(image_processing_menu_opts, OPTS_IMAGE_PROCESSING);
+			__HAL_TIM_SetAutoreload(&htim8,OPTS_PREPROCESSING-1);
+			print_menu(preprocessing_menu_opts, OPTS_PREPROCESSING);
 			setCursor(cursorLine);
 		}
 	}
@@ -187,10 +198,9 @@ void menu_image_processing()
 			{
 			case 0:
 				capture_image(1);
-				// TODO: call function
 				break;
 			case 1:
-				// TODO: call function
+				show_image(1);
 				break;
 			case 2:
 				// TODO: call function

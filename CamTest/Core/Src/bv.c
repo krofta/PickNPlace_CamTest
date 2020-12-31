@@ -11,17 +11,33 @@
 /***********************************************************************************************************/
 /*                      Sonstige Hilfsfunktionen                                                           */
 /***********************************************************************************************************/
+void frambuffer_test(unsigned char cMatrix[MAXXDIM][MAXYDIM]){
+	init_cMatrix(img, 0);
+	/*
+	cMatrix[40][150] = 255;
+	cMatrix[50][200] = 255;
+	cMatrix[40][150] = 255;
+	cMatrix[310][235] = 255;
+	cMatrix[10][235] = 255;
+	*/
+	for(int x = 0,y = 0; x < MAXYDIM; x+=10, y+=10){
+		img[x][y] = 255;
+	}
+}
+
 void init_cMatrix(unsigned char cMatrix[MAXXDIM][MAXYDIM], unsigned char val)
 {
 	memset(cMatrix, val, MAXXDIM*MAXYDIM * sizeof(unsigned char));
 	return;
 }
-/*
-void init_iMatrix(int iMatrix[MAXXDIM][MAXYDIM])
+
+void init_iMatrix(uint16_t iMatrix[MAXXDIM][MAXYDIM] , uint16_t val)
 {
-	memset(iMatrix, 0, MAXXDIM*MAXYDIM*sizeof(int));
-	return;
+	for(int x = 0; x < MAXXDIM; x++)
+		for(int y = 0; y < MAXYDIM; y++)
+			iMatrix[x][y] = (val>>8) + ((val&0xFF)<<8);
 }
+/*
 void init_fMatrix(float fMatrix[MAXXDIM][MAXYDIM])
 {
 	memset(fMatrix, 0, MAXXDIM*MAXYDIM*sizeof(float));
@@ -132,6 +148,33 @@ void reset_blob_label(int iIMG[MAXXDIM][MAXYDIM], int oldLabel, int newLabel)
 				iIMG[x][y] = newLabel;
 }
 */
+
+void rgb_to_greyscale(uint16_t iIMG[MAXXDIM][MAXYDIM ], unsigned char img[MAXXDIM][MAXYDIM]){
+	for(int x = 0; x < MAXXDIM ; x++){
+		for(int y = 0; y < MAXYDIM; y++){
+			// byteorder tauschen
+			uint16_t byteorder = (iIMG[x][y]>>8)  + ((iIMG[x][y]&0xFF)<<8);
+			uint16_t red = ((byteorder & 0xF800)>>8);
+			uint16_t green = ((byteorder & 0x07E0)>>5);
+			uint16_t blue = ((byteorder & 0x001F)<<3);
+			uint16_t grayscale = (red + green + blue) / 3;
+			img[x][y] = grayscale;
+		}
+	}
+}
+
+void greyscale_to_greyrgb(uint16_t iIMG[MAXXDIM][MAXYDIM ],unsigned char img[MAXXDIM][MAXYDIM]){
+	for(int x = 0; x < MAXXDIM ; x++){
+		for(int y = 0; y < MAXYDIM; y++){
+			// BLUE    0x001F
+			// GREEN   0x07E0
+			// RED     0xF800
+			// Byteorder muss zum display getauscht werden
+			uint16_t grey =((img[x][y] & 0xF8)<<8) + ((img[x][y] & 0xFC)<<3) + ((img[x][y] & 0xF8)>>3);
+			iIMG[x][y] = (grey>>8) + ((grey&0xFF)<<8);
+		}
+	}
+}
 
 /***********************************************************************************************************/
 /*                      Binäre Bildverarbeitung                                                            */
@@ -310,7 +353,7 @@ void calc_kumulativ_histo(unsigned char img[MAXXDIM][MAXYDIM], int grey[PIXEL_DE
 }
 
 //berechnet und schreibt ein normales/kumulatives Histogramm
-void histogramm(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int ART) {
+void histogramm(unsigned char img[MAXXDIM][MAXYDIM], int ART) {
 	int min = 255, max = 0, min_index = 0, max_index = 0;
 	int grey[PIXEL_DEPTH];
 	if (ART == HISTO_NORMAL)
@@ -333,21 +376,22 @@ void histogramm(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM]
 	//printf("Der Maximale Grauwert ist %i mit einer Anzahl von %i\n", max_index, max);
 	//printf("Der Minimale Grauwert ist %i mit einer Anzahl von %i\n", min_index, min);
 	// Faktor berechnen f�r 256 Farbwerte
-	float faktor = (float)PIXEL_DEPTH / (float)max;
+	float faktor = (float)MAXYDIM / (float)max;
 	//initialisierungdes histogramms
 	float skaliert[PIXEL_DEPTH];
 	for (int a = 0; a < PIXEL_DEPTH; a++)
 		skaliert[a] = 0;
 	for (int i = 0; i < PIXEL_DEPTH; i++)
 		skaliert[i] = (float)grey[i] * faktor;
-	init_cMatrix(img2, 255);
-	for (int x = 0; x < MAXXDIM; x++)
-		for (int y = 255; y > 0; y--)
+	init_cMatrix(img, 255);
+
+	for (int y = 0; y < PIXEL_DEPTH; y++)	// alle pixelwerte durchgehen in horizontaler richtung
+		for (int x = MAXXDIM; y > 0; y--)
 		{
-			if (y >(255 - (int)skaliert[x]))
-				img2[y][x] = 0;
-			if (skaliert[x] < 1 && skaliert[x] > 0)
-				img2[255][x] = 0;
+			if (x >(MAXYDIM - (int)skaliert[y]))
+				img[y][x] = 0;
+			if (skaliert[y] < 1 && skaliert[y] > 0)
+				img[MAXYDIM][x] = 0;
 		}
 	//printf("Druecken Sie eine beliebige Taste um das Histogramm abzuspechern...");
 	//fflush(stdin);
@@ -357,7 +401,7 @@ void histogramm(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM]
 
 
 //Grauwerte des Bildes werden auf den vollen Umfang an Grauwerten gedehnt
-void grauwert_dehnung(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM]) {
+void grauwert_dehnung(unsigned char img[MAXXDIM][MAXYDIM]) {
 	//system("cls");
 	// kleinster Grauwert
 	int kl_grau = 0, gr_grau = 0;
@@ -379,7 +423,7 @@ void grauwert_dehnung(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MA
 	// Aufweiten der Grauwerte auf die maximale Breite
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
-			img2[x][y] = (int)((float)255 / (float)(gr_grau - kl_grau) * (float)(img[x][y] - kl_grau));
+			img[x][y] = (int)((float)255 / (float)(gr_grau - kl_grau) * (float)(img[x][y] - kl_grau));
 	//printf("Druecken Sie eine beliebige Taste um das bearbeitete Bild abzuspeichern...");
 	//fflush(stdin);
 	//getch();
@@ -391,7 +435,7 @@ void grauwert_dehnung(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MA
 //linearer Hisotgrammauslgleich 
 // Quelle: Digitale Bildverarbeitung - Eine algorithmische Einf�hrung mit Java
 // Autor: Wilhelm Burger, Mark James Burge
-void linearer_histo_ausgleich(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int anzGrauWerte)
+void linearer_histo_ausgleich(unsigned char img[MAXXDIM][MAXYDIM], int anzGrauWerte)
 {
 	int grey[PIXEL_DEPTH];
 	calc_kumulativ_histo(img, grey);
@@ -401,12 +445,12 @@ void linearer_histo_ausgleich(unsigned char img[MAXXDIM][MAXYDIM], unsigned char
 		{
 			// Formel aus Quelle ( �berf�hrt von Java nach c++)
 			int new_px = grey[img[x][y]] * (anzGrauWerte - 1) / (MAXXDIM * MAXYDIM);
-			img2[x][y] = new_px > 255 ? 255 : new_px;
+			img[x][y] = new_px > 255 ? 255 : new_px;
 		}
 	// Aufweiten der Grauwerte auf die maximale Breite
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
-			img2[x][y] = (int)((float)(PIXEL_DEPTH-1) / (float)(anzGrauWerte - 1) * (float)(img2[x][y]));
+			img[x][y] = (int)((float)(PIXEL_DEPTH-1) / (float)(anzGrauWerte - 1) * (float)(img[x][y]));
 	//writeImage_ppm(img2, MAXXDIM, MAXYDIM);
 }
 
@@ -498,7 +542,7 @@ void gauss_filter(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDI
 			gauss_filter[x][y] = bin_ver[x] * bin_ver[y];
 	//Filter auf Bild anwenden
 	int iIMG[MAXXDIM][MAXYDIM];
-	init_iMatrix(iIMG);
+	init_iMatrix(iIMG, 0);
 	// Anfangswerte setzen je nach gerader/ungerader Filtermatrix und Gr��e der Matrix
 	for (int i = scale / 2; i < MAXXDIM - (scale / 2); i++) {
 		for (int j = scale / 2; j < MAXYDIM - (scale / 2); j++)

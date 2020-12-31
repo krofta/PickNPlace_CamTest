@@ -51,9 +51,9 @@ void count_white(unsigned char img[MAXXDIM][MAXYDIM]);
 */
 
 // Preprocessing
-void histogramm(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int ART);
-void grauwert_dehnung(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM]);
-void linearer_histo_ausgleich(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int anzGrauWerte);
+void histogramm(unsigned char img[MAXXDIM][MAXYDIM], int ART);
+void grauwert_dehnung(unsigned char img[MAXXDIM][MAXYDIM]);
+void linearer_histo_ausgleich(unsigned char img[MAXXDIM][MAXYDIM], int anzGrauWerte);
 void calc_absolut_histo(unsigned char img[MAXXDIM][MAXYDIM], int grey[PIXEL_DEPTH]);
 void calc_kumulativ_histo(unsigned char img[MAXXDIM][MAXYDIM], int grey[PIXEL_DEPTH]);
 void median_filter(unsigned char img[MAXXDIM][MAXYDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iDIMxy);
@@ -92,20 +92,22 @@ Momente widerstandsmomente(unsigned char img[MAXXDIM][MAXYDIM],Schwerpunkt s, un
 void zeige_rotation(unsigned char img[MAXXDIM][MAXYDIM], unsigned int object_label);
 double orientierung(Momente m);
 double winkel_rechteck(unsigned char img[MAXXDIM][MAXYDIM],Schwerpunkt s, unsigned int bloblabel);
-
+*/
 // Anderes
+void frambuffer_test(unsigned char cMatrix[MAXXDIM][MAXYDIM]);
 void init_cMatrix(unsigned char cMatrix[MAXXDIM][MAXYDIM], unsigned char val);
-void init_iMatrix(int iMatrix[MAXXDIM][MAXYDIM]);
-void init_fMatrix(float fMatrix[MAXXDIM][MAXYDIM]);
+void init_iMatrix(uint16_t iMatrix[MAXXDIM][MAXYDIM] , uint16_t val);
+//void init_fMatrix(float fMatrix[MAXXDIM][MAXYDIM]);
 int  find_abs_extremum_iMatrix(int min_max, int iMatrix[MAXXDIM][MAXYDIM]);
-float  find_abs_extremum_fMatrix(int min_max, float fMatrix[MAXXDIM][MAXYDIM]);
+//float  find_abs_extremum_fMatrix(int min_max, float fMatrix[MAXXDIM][MAXYDIM]);
 void get_bin_koeff(float bin_ver[50], int n, float normierung);
 double fakultaet(int n);
 void bubblesort(int *array, int length);
-void reset_blob_label(int iIMG[MAXXDIM][MAXYDIM], int oldLabel, int newLabel);
+//void reset_blob_label(uint16_t iIMG[MAXXDIM][MAXYDIM], int oldLabel, int newLabel);
+void rgb_to_greyscale(uint16_t iIMG[MAXXDIM][MAXYDIM ], unsigned char img[MAXXDIM ][MAXYDIM]);
 
 
 
 
 
-*/
+

@@ -11,16 +11,18 @@
 #define OV7670_QVGA_WIDTH  320
 #define OV7670_QVGA_HEIGHT 240
 
-#define MAXXDIM OV7670_QVGA_WIDTH
-#define MAXYDIM OV7670_QVGA_HEIGHT
+#define MAXXDIM 320
+#define MAXYDIM 240
 #define PIXEL_DEPTH 256
 #define HISTO_KUMULATIV 1
 #define HISTO_NORMAL 0
 // 153600 bytes
-extern uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
+//extern uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
+unsigned char img[MAXXDIM ][MAXYDIM];
+extern uint16_t framebuffer[OV7670_QVGA_WIDTH][OV7670_QVGA_HEIGHT ];
 // 76800 bytes
-extern unsigned char img[MAXXDIM][MAXYDIM];
-extern unsigned char img2[MAXXDIM][MAXYDIM];
+extern unsigned char img[MAXXDIM ][MAXYDIM];
+//extern unsigned char img2[MAXXDIM][MAXYDIM];
 // 9 bytes
 extern uint8_t btn_enc;
 extern uint8_t pic_captured;
