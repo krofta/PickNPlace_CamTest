@@ -299,6 +299,7 @@ void TIM8_CC_IRQHandler(void)
   case ACT_MENU_MAIN:
   case ACT_MENU_IMAGE_PROCESSING:
   case ACT_MENU_PREPROCESSING:
+  case ACT_MENU_EDGE_DETECTION:
 	  cursorLine = htim8.Instance->CNT;
 	  break;
   case ACT_MENU_LIGHT:

@@ -9,12 +9,23 @@
 #include "st7789.h"
 #include "globals.h"
 #include "ov7670.h"
+#include "bv.h"
 uint16_t actual_menu = ACT_MENU_MAIN;
 uint16_t cursorLine = 0;
 
 // extern variables
 extern TIM_HandleTypeDef htim8;
 extern uint8_t btn_enc;
+
+char *edge_detection_menu_opts[OPTS_PREPROCESSING] = {
+		"Sobel operator x",
+		"Sobel operator y",
+		"Sobel operator xy",
+		"Laplace operator",
+		"Difference of gaussian",
+		"Back"
+};
+
 
 char *preprocessing_menu_opts[OPTS_PREPROCESSING] = {
 		"Histogramm (normal)",
@@ -107,6 +118,57 @@ void print_menu(char *options[], int opt_count)
 		ST7789_WriteString(10, i*MENU_LINE_HEIGHT, options[i], Font_11x18, WHITE, BLACK);
 	}
 }
+void menu_edge_detection(){
+	uint16_t last_cursorline;
+	//HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+	// set global variable, that actual manu is main menu
+	actual_menu = ACT_MENU_EDGE_DETECTION;
+	// set encoder count to zero
+	htim8.Instance->CNT = 0;
+	last_cursorline = htim8.Instance->CNT;
+	// set max timer val for encoder
+	__HAL_TIM_SetAutoreload(&htim8,OPTS_EDGE_DETECTION-1);
+	print_menu(edge_detection_menu_opts, OPTS_EDGE_DETECTION);
+	setCursor(cursorLine);
+	while (1)
+	{
+		if(cursorLine != last_cursorline){
+			delCursor(last_cursorline);
+			setCursor(cursorLine);
+			last_cursorline = cursorLine;
+		}
+		if(btn_enc){
+			HAL_Delay(300);
+			btn_enc = 0;
+			switch (cursorLine)
+			{
+			case 0:
+				break;
+			case 1:
+				break;
+			case 2:
+				break;
+			case 3:
+				laplace(img, img2, (int16_t*)framebuffer, LAPLACE_8);
+				show_image(1);
+				break;
+			case 4:
+				break;
+			case 5:
+				return;
+
+			default:break;
+			}
+			// when back in this menu -> call print menu function
+			htim8.Instance->CNT = cursorLine = last_cursorline = 0;
+			__HAL_TIM_SetAutoreload(&htim8,OPTS_EDGE_DETECTION-1);
+			print_menu(edge_detection_menu_opts, OPTS_EDGE_DETECTION);
+			setCursor(cursorLine);
+		}
+	}
+}
+
 void menu_pre_processing(){
 	uint16_t last_cursorline;
 	//HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
@@ -134,26 +196,30 @@ void menu_pre_processing(){
 			{
 			case 0:
 				histogramm(img,HISTO_NORMAL);
+				show_image(1);
 				break;
 			case 1:
 				histogramm(img,HISTO_KUMULATIV);
+				show_image(1);
 				break;
 			case 2:
 				grauwert_dehnung(img);
+				show_image(1);
 				break;
 			case 3:
 				linearer_histo_ausgleich(img, 32);
+				show_image(1);
 				break;
 			case 4:
-				frambuffer_test(img);
+				mittelwert_filter(img, img2, 3, 1);
 				show_image(1);
-				//frambuffer_test(img);
-				// TODO: call function
 				break;
 			case 5:
-				// TODO: call function
+				median_filter3x3(img, img2);
+				show_image(1);
 				break;
 			case 6:
+				//gauss_filter(img, img2, 3);
 				// TODO: call function
 				break;
 			case 7:
@@ -209,6 +275,7 @@ void menu_image_processing()
 				menu_pre_processing();
 				break;
 			case 4:
+				menu_edge_detection();
 				// TODO: call function
 				break;
 			case 5:

@@ -22,11 +22,13 @@
 #define ACT_MENU_MAIN 0
 #define ACT_MENU_IMAGE_PROCESSING 1
 #define ACT_MENU_PREPROCESSING 401
+#define ACT_MENU_EDGE_DETECTION 501
 #define ACT_MENU_LIGHT 10
 
 #define OPTS_MAIN_MENU 	3
 #define OPTS_IMAGE_PROCESSING 8
 #define OPTS_PREPROCESSING 8
+#define OPTS_EDGE_DETECTION 6
 
 void setCursor(int pos);
 void delCursor(int pos);

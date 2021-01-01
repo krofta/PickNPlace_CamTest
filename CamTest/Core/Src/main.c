@@ -66,7 +66,8 @@ UART_HandleTypeDef huart3;
 /* USER CODE BEGIN PV */
 //uint16_t framebuffer[OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT];
 uint16_t framebuffer[OV7670_QVGA_HEIGHT][OV7670_QVGA_WIDTH  ];
-unsigned char img[MAXYDIM ][MAXXDIM ];
+unsigned char img[MAXYDIM][MAXXDIM];
+unsigned char img2[MAXYDIM][MAXXDIM];
 //unsigned char img2[MAXXDIM][MAXYDIM];
 uint8_t btn_enc = 0;
 uint8_t pic_captured = 0;

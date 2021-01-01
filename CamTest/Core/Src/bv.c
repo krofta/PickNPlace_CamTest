@@ -38,22 +38,22 @@ void init_iMatrix(uint16_t iMatrix[MAXYDIM][MAXXDIM] , uint16_t val)
 			iMatrix[y][x] = (val>>8) + ((val&0xFF)<<8);
 }
 /*
-void init_fMatrix(float fMatrix[MAXXDIM][MAXYDIM])
+void init_fMatrix(float fMatrix[MAXYDIM][MAXXDIM])
 {
 	memset(fMatrix, 0, MAXXDIM*MAXYDIM*sizeof(float));
 	return;
 }
 */
 //findet den vom Betrag gr��ten/kleinsten Wert der Matrix
-/*
-int  find_abs_extremum_iMatrix(int min_max, int iMatrix[MAXXDIM][MAXYDIM])
+
+int16_t  find_abs_extremum_iMatrix(int16_t min_max, int16_t iMatrix[MAXYDIM][MAXXDIM])
 {
-	int extremum = min_max == MAX ? 0 : 0xFFFF;
-	int abs = 0;
+	int16_t extremum = min_max == MAX ? 0 : 0xFFFF;
+	int16_t abs = 0;
 	if (min_max == MAX){
 		for (int i = 0; i < MAXXDIM; i++){
 			for (int j = 0; j < MAXYDIM; j++){
-				abs = iMatrix[i][j] < 0 ? iMatrix[i][j] * -1 : iMatrix[i][j]; //sqrt(pow(iMatrix[i][j], 2));
+				abs = iMatrix[j][i] < 0 ? iMatrix[j][i] * -1 : iMatrix[j][i]; //sqrt(pow(iMatrix[i][j], 2));
 				if (abs > extremum)
 					extremum = abs;
 			}
@@ -61,7 +61,7 @@ int  find_abs_extremum_iMatrix(int min_max, int iMatrix[MAXXDIM][MAXYDIM])
 	}else{
 		for (int i = 0; i < MAXXDIM; i++){
 			for (int j = 0; j < MAXYDIM; j++){
-				abs = iMatrix[i][j] < 0 ? iMatrix[i][j] * -1 : iMatrix[i][j]; //sqrt(pow(iMatrix[i][j], 2));
+				abs = iMatrix[j][i] < 0 ? iMatrix[j][i] * -1 : iMatrix[j][i]; //sqrt(pow(iMatrix[i][j], 2));
 				if (abs < extremum)
 					extremum = abs;
 			}
@@ -70,10 +70,10 @@ int  find_abs_extremum_iMatrix(int min_max, int iMatrix[MAXXDIM][MAXYDIM])
 
 	return extremum;
 }
-*/
+
 //findet den vom Betrag gr��ten/kleinsten Wert der Matrix
 /*
-float  find_abs_extremum_fMatrix(int min_max, float fMatrix[MAXXDIM][MAXYDIM])
+float  find_abs_extremum_fMatrix(int min_max, float fMatrix[MAXYDIM][MAXXDIM])
 {
 	float extremum = min_max == MAX ? 0.0 : 0xFFFF;
 	float abs = 0;
@@ -181,7 +181,7 @@ void greyscale_to_greyrgb(uint16_t iIMG[MAXYDIM][MAXXDIM],unsigned char img[MAXY
 /***********************************************************************************************************/
 /*
 //Shrink Algorithmus
-void shrink(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM]) {
+void shrink(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]) {
 	int i,j;
 	init_cMatrix(img2, 0);
 	for (i = 1; i < MAXXDIM - 1; i++) 
@@ -191,7 +191,7 @@ void shrink(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAX
 }
 
 // Blow Algorithmus
-void blow(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM]) {
+void blow(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]) {
 	int i;
 	int j;
 	init_cMatrix(img2, 0);
@@ -208,7 +208,7 @@ void blow(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYD
 
 
 // Open Algorithmus
-void funk_open(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM]) {
+void funk_open(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]) {
 	int x,y,i,j;
 	printf("Geben Sie die Anzahl der Erosion- und Dilatation- Vorgaenge an\n");
 	scanf("%d", &y);
@@ -228,7 +228,7 @@ void funk_open(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][
 }
 
 // Close Algorithmus
-void funk_close(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM]) {
+void funk_close(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]) {
 	int x,y,i,j;
 	printf("Geben Sie die Anzahl der Dilatation- und Erosion- Vorgaenge an\n");
 	scanf("%d", &y);
@@ -372,9 +372,6 @@ void histogramm(unsigned char img[MAXYDIM][MAXXDIM], int ART) {
 			max = grey[c];
 			max_index = c;
 		}
-	//system("cls");
-	//printf("Der Maximale Grauwert ist %i mit einer Anzahl von %i\n", max_index, max);
-	//printf("Der Minimale Grauwert ist %i mit einer Anzahl von %i\n", min_index, min);
 	// Faktor berechnen f�r 256 Farbwerte
 	float faktor = (float)MAXYDIM / (float)max;
 	//initialisierungdes histogramms
@@ -393,10 +390,6 @@ void histogramm(unsigned char img[MAXYDIM][MAXXDIM], int ART) {
 			if (skaliert[x] < 1 && skaliert[x] > 0)
 				img[MAXYDIM][x] = 0;
 		}
-	//printf("Druecken Sie eine beliebige Taste um das Histogramm abzuspechern...");
-	//fflush(stdin);
-	//getch();
-	//writeImage_ppm(img2, MAXXDIM, MAXYDIM);
 }
 
 
@@ -423,12 +416,7 @@ void grauwert_dehnung(unsigned char img[MAXYDIM][MAXXDIM]) {
 	// Aufweiten der Grauwerte auf die maximale Breite
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
-			img[x][y] = (int)((float)255 / (float)(gr_grau - kl_grau) * (float)(img[x][y] - kl_grau));
-	//printf("Druecken Sie eine beliebige Taste um das bearbeitete Bild abzuspeichern...");
-	//fflush(stdin);
-	//getch();
-	//system("cls");
-	//writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+			img[y][x] = (int)((float)255 / (float)(gr_grau - kl_grau) * (float)(img[y][x] - kl_grau));
 }
 
 
@@ -439,19 +427,19 @@ void linearer_histo_ausgleich(unsigned char img[MAXYDIM][MAXXDIM], int anzGrauWe
 {
 	int grey[PIXEL_DEPTH];
 	calc_kumulativ_histo(img, grey);
+	int surface = MAXXDIM * MAXYDIM;
 	// linearer Ausgleich des Bildes
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
 		{
 			// Formel aus Quelle ( �berf�hrt von Java nach c++)
-			int new_px = grey[img[x][y]] * (anzGrauWerte - 1) / (MAXXDIM * MAXYDIM);
-			img[x][y] = new_px > 255 ? 255 : new_px;
+			int new_px = grey[img[y][x]] * (anzGrauWerte - 1) / (surface);
+			img[y][x] = new_px > 255 ? 255 : new_px;
 		}
 	// Aufweiten der Grauwerte auf die maximale Breite
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
-			img[x][y] = (int)((float)(PIXEL_DEPTH-1) / (float)(anzGrauWerte - 1) * (float)(img[x][y]));
-	//writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+			img[y][x] = (int)((float)(PIXEL_DEPTH-1) / (float)(anzGrauWerte - 1) * (float)(img[y][x]));
 }
 
 
@@ -459,71 +447,113 @@ void linearer_histo_ausgleich(unsigned char img[MAXYDIM][MAXXDIM], int anzGrauWe
 /*                      Filterfunktionen                                                                   */
 /***********************************************************************************************************/
 //Medianilter mit quadratischer Dimension der Form n*n, wobei n GERADE UND UNGERADE sein darf!
-void median_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iDIMxy)
+void median_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iDIMxy)
 {
 	// Sicherheitsabfrage, ob Eingabe ok
 	if (iDIMxy < 2 || iDIMxy > 11)
 		return;
-	//init_cMatrix(img2,255);
-	for (int x = 0; x < MAXXDIM ; x++)
-		for (int y = 0; y < MAXYDIM; y++)
-			img2[x][y] = img[x][y];
+	//memcpy(img2,img, sizeof(img));
+	for(int x = 0; x < MAXXDIM; x++)for(int y = 0; y < MAXYDIM; y++)img2[y][x] = img[y][x];
 	int MedianSort[11 * 11];
+	int z2 = iDIMxy * iDIMxy;
+
+	int i0 = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0);
+	int ic = MAXXDIM - iDIMxy / 2;
+	int j0 = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0);
+	int jc = MAXYDIM - iDIMxy / 2;
+
+	int gerade = iDIMxy % 2;
+	int mitte = iDIMxy*iDIMxy / 2;
+	int iDIxy2 = (iDIMxy / 2);
+
 	// Anfangswerte setzen je nach gerader/ungerader Filtermatrix und Gr��e der Matrix
-	for (int i = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0); i < MAXXDIM - iDIMxy / 2; i++) {
-		for (int j = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0); j < MAXYDIM - iDIMxy / 2; j++)
-		{
-			//Werte f�r die Sortierung holen
-			for (int z = 0; z < pow(iDIMxy, 2); z++)
-				MedianSort[z] = 0;
+	for (int i = i0; i < ic; i++) {
+		for (int j = j0; j < jc; j++){
+			memset(MedianSort, 0, sizeof(MedianSort));
+			int x0 = i - i0;
+			int xc = i + iDIxy2;
+			int y0 = j - i0;
+			int yc = j + iDIxy2;
 			// Anfangswerte setzen, Randproblem beachten, da sonst Zugriff auf nicht indizierte Zellen.
-			for (int x = i - ((iDIMxy / 2) - (iDIMxy % 2 == 0 ? 1 : 0)), counter = 0; x <= i + (iDIMxy / 2); ++x)
-				for (int y = j - ((iDIMxy / 2) - (iDIMxy % 2 == 0 ? 1 : 0)); y <= j + (iDIMxy / 2); ++y)
-					MedianSort[counter++] = img[x][y];
-			bubblesort(MedianSort, pow(iDIMxy, 2));
+			for (int x = x0, counter = 0; x <= xc; ++x)
+				for (int y = y0; y <= yc; ++y)
+					MedianSort[counter++] = img2[y][x];
+			bubblesort(MedianSort, z2);
 			// Wenn gerade Matrix, dann Mittelwert aus den mittleren Beiden werten als Median bilden
-			img2[i][j] = iDIMxy % 2 == 0 ? (MedianSort[iDIMxy*iDIMxy / 2] + MedianSort[iDIMxy*iDIMxy / 2 - 1]) / 2 : MedianSort[iDIMxy*iDIMxy / 2];
+			img[j][i] =  gerade == 0 ? ((MedianSort[mitte] + MedianSort[mitte - 1]) / 2) : MedianSort[mitte];
 		}
 	}
-	//writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+}
+
+void median_filter3x3(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]){
+	int MedianSort[3 * 3];
+	for(int x = 0; x < MAXXDIM; x++)for(int y = 0; y < MAXYDIM; y++)img2[y][x] = img[y][x];
+	for(int x = 1; x < (MAXXDIM-1); x++){
+		for(int y = 1; y < (MAXYDIM-1); y++){
+			for(int xx = x-1, counter = 0; xx <= x+1; xx++){
+				for(int yy = y-1; yy <= y+1; yy++){
+					MedianSort[counter++] = img2[yy][xx];
+				}
+			}
+			// Bubblesort nach der hälfte abbrechen um rechenzeit zu sparen. Es wird nur der median benötigt
+
+			for (int i = 0; i < 5 - 1; ++i)
+				for (int j = 0; j < 9 - i - 1; ++j)
+					if (MedianSort[j] > MedianSort[j + 1]) {
+						int tmp = MedianSort[j];
+						MedianSort[j] = MedianSort[j + 1];
+						MedianSort[j + 1] = tmp;
+					}
+			//bubblesort(MedianSort, 9);
+			img[y][x] =  MedianSort[4];
+		}
+	}
 }
 
 //Mittelwertfiler f�r Filter-Matrizen der Form n*n, wobei n GERADE UND UNGERADE sein darf!
-void mittelwert_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iDIMxy, int Gewichtung)
+void mittelwert_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iDIMxy, int Gewichtung)
 {
 	// Sicherheitsabfrage, ob Eingabe ok
 	if (iDIMxy < 2 || iDIMxy > 11)
 		return;
 	//init_cMatrix(img2,255);
-	for (int x = 0; x < MAXXDIM; x++)
-		for (int y = 0; y < MAXYDIM; y++)
-			img2[x][y] = img[x][y];
-	int zw;
+	//memcpy(img2,img, sizeof(img));
+	for(int x = 0; x < MAXXDIM; x++)for(int y = 0; y < MAXYDIM; y++)img2[y][x] = img[y][x];
+	uint32_t zw;
 	// Anfangswerte setzen je nach gerader/ungerader Filtermatrix und Gr��e der Matrix
-	for (int i = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0); i < MAXXDIM - iDIMxy / 2; i++) {
-		for (int j = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0); j < MAXYDIM - iDIMxy / 2; j++)
+	int i0 = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0);
+	int ic = MAXXDIM - iDIMxy / 2;
+	int j0 = iDIMxy / 2 - (iDIMxy % 2 == 0 ? 1 : 0);
+	int iDIxy2 = (iDIMxy / 2);
+	int gerade = iDIMxy % 2;
+	for (int i = i0; i < ic; i++) {
+		for (int j = j0; j < ic; j++)
 		{
+			int x0 = i - i0;
+			int xc = i + iDIxy2;
+			int y0 = j - i0;
+			int yc = j + iDIxy2;
 			// Anfangswerte setzen je nach gerader/ungerader Filtermatrix, Randproblem beachten
-			for (int x = i - ((iDIMxy / 2) - (iDIMxy % 2 == 0 ? 1 : 0)), a = zw = 0; x <= i + (iDIMxy / 2); ++x, ++a) {
-				for (int y = j - ((iDIMxy / 2) - (iDIMxy % 2 == 0 ? 1 : 0)), b = 0; y <= j + (iDIMxy / 2); ++y, ++b) {
-					if (iDIMxy % 2 == 0)
+			for (int x = x0, a = zw = 0; x <= xc; ++x, ++a) {
+				for (int y = y0, b = 0; y <= yc; ++y, ++b) {
+					if (gerade == 0)
 						// Wenn a == b und iDIMxy/2-1 erreicht ist, ist dies der Mittelpunkt pixel f�r gerade Matrix
-						zw += a == b && a == (iDIMxy / 2 - 1) ? img[x][y] * Gewichtung : img[x][y];
+						zw += a == b && a == (iDIMxy / 2 - 1) ? img2[y][x] * Gewichtung : img2[y][x];
 					else
 						//  Wenn a == b und iDIMxy/2 erreicht ist, ist dies der Mittelpunkt pixel f�r ungerade Matrix
-						zw += a == b && a == (iDIMxy / 2) ? img[x][y] * Gewichtung : img[x][y];
+						zw += a == b && a == (iDIMxy / 2) ? img2[y][x] * Gewichtung : img2[y][x];
 				}
 			}
 			// Mittelwert bilden
-			zw /= pow(iDIMxy, 2) + (Gewichtung - 1);
-			img2[i][j] = (unsigned char)(zw > 255 ? 255 : zw < 0 ? 0 : zw);
+			zw /= (iDIMxy*iDIMxy) + (Gewichtung - 1);
+			img[j][i] = (unsigned char)(zw > 255 ? 255 : zw < 0 ? 0 : zw);
 		}
 	}
 	//writeImage_ppm(img2, MAXXDIM, MAXYDIM);
 }
 /*
 // Gaussfilter: img - Eingabebild, img2 - Ausgabebild, scale - Gr��e des Filters
-void gauss_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int scale)
+void gauss_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int scale)
 {
 	// Sicherheitsabfrage
 	if (scale > 50 || scale < 3 || scale % 2 == 0)
@@ -578,12 +608,12 @@ void gauss_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDI
 /***********************************************************************************************************/
 /*                      Kantendetektion                                                                    */
 /***********************************************************************************************************/
-/*
+
 // Erste Ableitung in x Richtung, Sobeloperator
-void sobelx(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int sobelx[MAXXDIM][MAXYDIM])
+void sobelx(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int16_t sobelx[MAXYDIM][MAXXDIM])
 {
 	init_cMatrix(img2, (PIXEL_DEPTH / 2));
-	init_iMatrix(sobelx);
+	init_iMatrix(sobelx,0);
 	int summe[8] = { 0,0,0,0,0,0,0,0 };
 	for (int i = 1; i < MAXXDIM - 1; i++) {
 		for (int j = 1; j < MAXYDIM - 1; j++) {
@@ -606,12 +636,12 @@ void sobelx(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAX
 	for (int x = 1; x < MAXXDIM - 1; x++)
 		for (int y = 1; y < MAXYDIM - 1; y++)
 			img2[x][y] += (unsigned char)((float)sobelx[x][y] * faktor);
-	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+
 }
 // Erste Ableitung in y-Richtung, Sobeloperator
-void sobely(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int sobely[MAXXDIM][MAXYDIM]) {
+void sobely(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int16_t sobely[MAXYDIM][MAXXDIM]) {
 	init_cMatrix(img2, (PIXEL_DEPTH / 2));
-	init_iMatrix(sobely);
+	init_iMatrix(sobely,0);
 	int summe[8] = { 0,0,0,0,0,0,0,0 };
 	for (int i = 1; i < MAXXDIM - 1; i++) {
 		for (int j = 1; j < MAXYDIM - 1; j++) {
@@ -633,14 +663,14 @@ void sobely(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAX
 	for (int x = 1; x < MAXXDIM - 1; x++)
 		for (int y = 1; y < MAXYDIM - 1; y++)
 			img2[x][y] += (unsigned char)((float)sobely[x][y] * faktor);
-	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+
 }
 
 // Kobination der Operatoren Sobel in x und y Richtung
-void sobelxy(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int sobelx[MAXXDIM][MAXYDIM], int sobely[MAXXDIM][MAXYDIM]) {
+void sobelxy(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int sobelx[MAXYDIM][MAXXDIM], int sobely[MAXYDIM][MAXXDIM]) {
 	init_cMatrix(img2, (PIXEL_DEPTH / 2));
-	int iimg[MAXYDIM][MAXXDIM];
-	init_iMatrix(iIMG);
+	int iIMG[MAXYDIM][MAXXDIM];
+	init_iMatrix(iIMG,0);
 	for (int i = 0; i < MAXXDIM; i++)
 		for (int j = 0; j < MAXYDIM; j++)
 			iIMG[i][j] = sqrt(pow(sobely[i][j], 2) + pow(sobelx[i][j], 2));
@@ -652,37 +682,37 @@ void sobelxy(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MA
 	for (int x = 1; x < MAXXDIM - 1; x++)
 		for (int y = 1; y < MAXYDIM - 1; y++)
 			img2[x][y] = (unsigned char)((float)iIMG[x][y] * faktor);
-	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+
 }
 
 // zweite Ableitung durch Laplace Operator
-void laplace(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int Umgebung) {
+void laplace(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM],int16_t iIMG[MAXYDIM][MAXXDIM], int Umgebung) {
 	init_cMatrix(img2, (PIXEL_DEPTH / 2));
+	for(int x = 0; x < MAXXDIM; x++)for(int y = 0; y < MAXYDIM; y++)img2[y][x] = img[y][x];
 	int summe[3] = { 0,0,0 };
 	int zw = 0;
 	// Matrix der Laplace Operation berechnen
 	//Filter auf Bild anwenden
-	int iimg[MAXYDIM][MAXXDIM];
-	init_iMatrix(iIMG);
-	for (int i = 1; i < MAXXDIM - 1; i++) {
-		for (int j = 1; j < MAXYDIM - 1; j++) {
+	init_iMatrix(iIMG,0);
+	for (int y = 1; y < MAXYDIM- 1; y++) {
+		for (int x = 1; x < MAXXDIM - 1; x++) {
 			if (Umgebung == LAPLACE_4) {
-				summe[0] = img[i - 1][j];
-				summe[1] = img[i][j - 1] + (img[i][j] * (-4)) + img[i][j + 1];
-				summe[2] = img[i + 1][j];
+				summe[0] = img2[y - 1][x];
+				summe[1] = img2[y][x - 1] + (img2[y][x] * (-4)) + img2[y][x + 1];
+				summe[2] = img2[y + 1][x];
 			}
 			else if (Umgebung == LAPLACE_8)
 			{
-				summe[0] = img[i - 1][j - 1] + img[i - 1][j] + img[i - 1][j + 1];
-				summe[1] = img[i][j - 1] + (img[i][j] * (-8)) + img[i][j + 1];
-				summe[2] = img[i + 1][j - 1] + img[i + 1][j] + img[i + 1][j + 1];
+				summe[0] = img2[y - 1][x - 1] + img2[y - 1][x] + img2[y - 1][x + 1];
+				summe[1] = img2[y][x - 1] + (img2[y][x] * (-8)) + img2[y][x + 1];
+				summe[2] = img2[y + 1][x - 1] + img2[y + 1][x] + img2[y + 1][x + 1];
 			}
 			zw = 0;
 			for (int z = 0; z < 3; z++) {
 				zw += summe[z];
 			}
 			// Dieser Wert kann positiv und negativ sein
-			iIMG[i][j] = zw;
+			iIMG[y][x] = zw;
 		}
 	}
 	// Pixelwerte skalieren und Bild schreiben
@@ -693,12 +723,11 @@ void laplace(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MA
 	for (int x = 1; x < MAXXDIM - 1; x++)
 		for (int y = 1; y < MAXYDIM - 1; y++)
 		{
-			img2[x][y] += (unsigned char)((float)iIMG[x][y] * faktor);
+			img[y][x] += (unsigned char)((float)iIMG[y][x] * faktor);
 		}
-	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
 }
 //Difference of Gaussian 
-void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int scale, int grundton)
+void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int scale, int grundton)
 {
 	// Sicherheitsabfrage
 	if (scale > 50 || scale < 3 || scale % 2 == 0)
@@ -728,8 +757,8 @@ void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 		for (int y = 0; y < scale; y++, a++)
 			diff_of_gauss[x][y] = diff[x] * diff[y];
 	//Filter auf Bild anwenden
-	int iimg[MAXYDIM][MAXXDIM];
-	init_iMatrix(iIMG);
+	int iIMG[MAXYDIM][MAXXDIM];
+	init_iMatrix(iIMG,0);
 	// Anfangswerte setzen je nach gerader/ungerader Filtermatrix und Gr��e der Matrix
 	for (int i = scale / 2; i < MAXXDIM - (scale / 2); i++) {
 		for (int j = scale / 2; j < MAXYDIM - (scale / 2); j++)
@@ -766,18 +795,17 @@ void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 			else if (grundton == 255)
 				img2[x][y] = 255 - (unsigned char)sqrt(pow((int)((float)iIMG[x][y] * faktor), 2));
 		}
-	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
 }
-*/
+
 /***********************************************************************************************************/
 /*                      Texturenerkennung                                                                  */
 /***********************************************************************************************************/
 /*
 // Texturenerkennung mit den Laws-Masken
-void laws_textur(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM])
+void laws_textur(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM])
 {
 	init_cMatrix(img2,255);
-	float fArray[MAXXDIM][MAXYDIM];
+	float fArray[MAXYDIM][MAXXDIM];
 	init_fMatrix(fArray);
 
 	int masken[9][9] = {	 
@@ -813,7 +841,7 @@ void laws_textur(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM
 }
 
 // Statistik 2. Ordnung
-void cooccurence_matrix(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], float fimg[MAXYDIM][MAXXDIM], int direction, int save)
+void cooccurence_matrix(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], float fimg[MAXYDIM][MAXXDIM], int direction, int save)
 {
 	init_cMatrix(img2, 255);
 	if(save == 1)
@@ -859,7 +887,7 @@ void cooccurence_matrix(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[
 			sum += fIMG[i][j];
 }
 
-void cooc_matrix_kombi_asm(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], float fimg[MAXYDIM][MAXXDIM], int graustufen)
+void cooc_matrix_kombi_asm(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], float fimg[MAXYDIM][MAXXDIM], int graustufen)
 {
 	init_cMatrix(img2, 255);
 	init_fMatrix(fIMG);
@@ -909,7 +937,7 @@ void calc_asm_energie(float fimg[MAXYDIM][MAXXDIM])
 /*                      Segmentierung                                                                      */
 /***********************************************************************************************************/
 /*
-void segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM])
+void segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM])
 {
 
 	// Verfahren von Otsu
@@ -968,7 +996,7 @@ void segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 	segmentierung_binaer(img, img2, iSchwelle);
 }
 
-void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int threshold)
+void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int threshold)
 {
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
@@ -977,7 +1005,7 @@ void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img
 }
 
 // Blob-Coloring mit L�sung der Ausfransungen, mit Iterationsverfahren zum Verbessern der Segmentierung
-void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iimg[MAXYDIM][MAXXDIM],
+void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][MAXXDIM],
 		int intervall, int keine_fransen, int writeImage, int iterationen)
 {
 	int bereich = 5, max = 0, null_labels = 0;
@@ -1144,7 +1172,7 @@ unsigned int find_blobs(unsigned char img[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][M
 }
 
 // Blob-Coloring mit Lösung der Ausfransungen, ohne Iterationsverafahren: zum segmentieren von einfachen Objekten ( evtl binaerisiert )
-void blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iimg[MAXYDIM][MAXXDIM], int bereich, int writeImage)
+void blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][MAXXDIM], int bereich, int writeImage)
 {
 	find_blobs(img,iIMG, bereich);
 	// Blob-Coloring nur als Bild schreiben, wenn es direkt aus dem Menu aufgreufen wird
@@ -1165,7 +1193,7 @@ void blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned 
 }
 
 // Funktion zur erstellen eines Berichtes �ber Tablettenblister f�r Pr�sentation
-void blister_blob(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXXDIM][MAXYDIM], int iimg[MAXYDIM][MAXXDIM])
+void blister_blob(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][MAXXDIM])
 {
 	int iOben = 1380, iUnten = 1310;
 	// Blob-Coloring ohne schreiben des Bildes aufrufen.
