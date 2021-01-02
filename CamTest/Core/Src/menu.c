@@ -17,7 +17,26 @@ uint16_t cursorLine = 0;
 extern TIM_HandleTypeDef htim8;
 extern uint8_t btn_enc;
 
-char *edge_detection_menu_opts[OPTS_PREPROCESSING] = {
+uint16_t segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM]);
+void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], uint16_t threshold);
+void invert(unsigned char img[MAXYDIM][MAXXDIM]);
+//void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iIMG[MAXYDIM][MAXXDIM],
+//		int iteration, int keine_fransen, int writeImage, int iterationen);
+uint16_t find_blobs(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t bereich);
+uint16_t blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], int bereich, int writeImage);
+void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM],uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t background_threshold, uint16_t min_blobsize);
+
+
+char *segmentation_menu_opts[OPTS_SEGMENTATION] = {
+		"Seg. von Otsu",
+		"Seg.binaer",
+		"Invert",
+		"Blob segmentation",
+		"Find biggest blob",
+		"Back"
+};
+
+char *edge_detection_menu_opts[OPTS_EDGE_DETECTION] = {
 		"Sobel operator x",
 		"Sobel operator y",
 		"Sobel operator xy",
@@ -113,11 +132,75 @@ void delCursor(int pos){
 }
 void print_menu(char *options[], int opt_count)
 {
-	ST7789_Fill_Color(BLUE);
+	init_iMatrix(framebuffer, BLACK);
+	ST7789_DrawImage(0,0,320,240,framebuffer);
 	for(int i = 0; i < opt_count; i++){
 		ST7789_WriteString(10, i*MENU_LINE_HEIGHT, options[i], Font_11x18, WHITE, BLACK);
 	}
 }
+void menu_segmentation(){
+	uint16_t last_cursorline;
+	//HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+	// set global variable, that actual manu is main menu
+	actual_menu = ACT_MENU_SEGMENTATION;
+	// set encoder count to zero
+	htim8.Instance->CNT = 0;
+	last_cursorline = htim8.Instance->CNT;
+	// set max timer val for encoder
+	__HAL_TIM_SetAutoreload(&htim8,OPTS_SEGMENTATION-1);
+	print_menu(segmentation_menu_opts, OPTS_SEGMENTATION);
+	setCursor(cursorLine);
+	char buf[10];
+	uint16_t blobs = 0;
+	while (1)
+	{
+		if(cursorLine != last_cursorline){
+			delCursor(last_cursorline);
+			setCursor(cursorLine);
+			last_cursorline = cursorLine;
+		}
+		if(btn_enc){
+			HAL_Delay(300);
+			btn_enc = 0;
+			switch (cursorLine)
+			{
+			case 0:
+				segmentierung_von_otsu(img);
+				show_image(1);
+				break;
+			case 1:
+				segmentierung_binaer(img, 75);
+				show_image(1);
+				break;
+			case 2:
+				invert(img);
+				show_image(1);
+				break;
+			case 3:
+				blobs = blob_coloring_markersensitiv(img, framebuffer, 10, 1);
+				sprintf(buf,"%hu",blobs);
+				show_image(1);
+				ST7789_WriteString(10, 20, buf, Font_11x18, WHITE, BLACK);
+				break;
+			case 4:
+				biggestBlob(img, framebuffer, 200, 150);
+				show_image(1);
+				break;
+			case 5:
+				return;
+
+			default:break;
+			}
+			// when back in this menu -> call print menu function
+			htim8.Instance->CNT = cursorLine = last_cursorline = 0;
+			__HAL_TIM_SetAutoreload(&htim8,OPTS_SEGMENTATION-1);
+			print_menu(segmentation_menu_opts, OPTS_SEGMENTATION);
+			setCursor(cursorLine);
+		}
+	}
+}
+
 void menu_edge_detection(){
 	uint16_t last_cursorline;
 	//HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
@@ -144,16 +227,22 @@ void menu_edge_detection(){
 			switch (cursorLine)
 			{
 			case 0:
+				sobelx(img, framebuffer);
+				show_image(1);
 				break;
 			case 1:
+				sobely(img, framebuffer);
+				show_image(1);
 				break;
 			case 2:
 				break;
 			case 3:
-				laplace(img, img2, (int16_t*)framebuffer, LAPLACE_8);
+				laplace(img, framebuffer, LAPLACE_8);
 				show_image(1);
 				break;
 			case 4:
+				difference_of_gaussian(img, framebuffer, 3, 0);
+				show_image(1);
 				break;
 			case 5:
 				return;
@@ -282,7 +371,7 @@ void menu_image_processing()
 				// TODO: call function
 				break;
 			case 6:
-				// TODO: call function
+				menu_segmentation();
 				break;
 			case 7:
 				return;

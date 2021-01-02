@@ -71,6 +71,29 @@ int16_t  find_abs_extremum_iMatrix(int16_t min_max, int16_t iMatrix[MAXYDIM][MAX
 	return extremum;
 }
 
+uint16_t  find_abs_extremum_uiMatrix(uint16_t min_max, uint16_t uiMatrix[MAXYDIM][MAXXDIM])
+{
+	uint16_t extremum = min_max == MAX ? 0 : 0xFFFF;
+	if (min_max == MAX){
+		for (int i = 0; i < MAXXDIM; i++){
+			for (int j = 0; j < MAXYDIM; j++){
+				if (uiMatrix[j][i] > extremum){
+					extremum = uiMatrix[j][i];
+				}
+			}
+		}
+	}else{
+		for (int i = 0; i < MAXXDIM; i++){
+			for (int j = 0; j < MAXYDIM; j++){
+				if (uiMatrix[j][i] < extremum){
+					extremum = uiMatrix[j][i];
+				}
+			}
+		}
+	}
+	return extremum;
+}
+
 //findet den vom Betrag gr��ten/kleinsten Wert der Matrix
 /*
 float  find_abs_extremum_fMatrix(int min_max, float fMatrix[MAXYDIM][MAXXDIM])
@@ -139,15 +162,15 @@ void get_bin_koeff(float bin_ver[50], int n, float normierung)
 	for (int i = 0; i <= n; i++)
 		bin_ver[i] *= faktor;
 }
-/*
-void reset_blob_label(int iimg[MAXYDIM][MAXXDIM], int oldLabel, int newLabel)
+
+void reset_blob_label(uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t oldLabel, uint16_t newLabel)
 {
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
-			if (iIMG[x][y] == oldLabel)
-				iIMG[x][y] = newLabel;
+			if (iIMG[y][x] == oldLabel)
+				iIMG[y][x] = newLabel;
 }
-*/
+
 
 void rgb_to_greyscale(uint16_t iIMG[MAXYDIM][MAXXDIM], unsigned char img[MAXYDIM][MAXXDIM]){
 	for(int x = 0; x < MAXXDIM ; x++){
@@ -610,22 +633,21 @@ void gauss_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDI
 /***********************************************************************************************************/
 
 // Erste Ableitung in x Richtung, Sobeloperator
-void sobelx(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int16_t sobelx[MAXYDIM][MAXXDIM])
+void sobelx(unsigned char img[MAXYDIM][MAXXDIM], int16_t sobelx[MAXYDIM][MAXXDIM])
 {
-	init_cMatrix(img2, (PIXEL_DEPTH / 2));
-	init_iMatrix(sobelx,0);
-	int summe[8] = { 0,0,0,0,0,0,0,0 };
-	for (int i = 1; i < MAXXDIM - 1; i++) {
-		for (int j = 1; j < MAXYDIM - 1; j++) {
-
-			summe[0] = img[i][j + 1] * -2;
-			summe[1] = img[i][j - 1] * 2;
-			summe[2] = img[i + 1][j + 1] * -1;
-			summe[3] = img[i - 1][j - 1];
-			summe[4] = img[i - 1][j + 1] * -1;
-			summe[5] = img[i + 1][j - 1];
-			for (int z = 0; z < 6; z++)
-				sobelx[i][j] += summe[z];
+	//init_cMatrix(img2, (PIXEL_DEPTH / 2));
+	unsigned char px_dp2 = PIXEL_DEPTH / 2;
+	//init_iMatrix(sobelx,0);
+	for (int x = 1; x < MAXXDIM - 1; x++) {
+		for (int y = 1; y < MAXYDIM - 1; y++) {
+			// first instruction initializes the array cell
+			sobelx[y][x] = img[y][x + 1] * -2;
+			// remaining just add its value to it
+			sobelx[y][x] += img[y][x - 1] * 2;
+			sobelx[y][x] += img[y + 1][x + 1] * -1;
+			sobelx[y][x] += img[y - 1][x - 1];
+			sobelx[y][x] += img[y - 1][x + 1] * -1;
+			sobelx[y][x] += img[y + 1][x - 1];
 		}
 	}
 	// Pixelwerte skalieren und Bild schreiben
@@ -635,24 +657,31 @@ void sobelx(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAX
 	faktor = (float)(PIXEL_DEPTH / 2) / (float)max;
 	for (int x = 1; x < MAXXDIM - 1; x++)
 		for (int y = 1; y < MAXYDIM - 1; y++)
-			img2[x][y] += (unsigned char)((float)sobelx[x][y] * faktor);
+			img[y][x] = px_dp2 + (signed char)((float)sobelx[y][x] * faktor);
+	// ränder einfärben
+	for(int x = 0; x < MAXXDIM; x++){
+		img[0][x] = px_dp2;
+		img[MAXYDIM][x] = px_dp2;
+	}
+	for(int y = 0; y < MAXYDIM; y++){
+		img[y][0] = px_dp2;
+		img[y][MAXXDIM] = px_dp2;;
+	}
 
 }
 // Erste Ableitung in y-Richtung, Sobeloperator
-void sobely(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int16_t sobely[MAXYDIM][MAXXDIM]) {
-	init_cMatrix(img2, (PIXEL_DEPTH / 2));
-	init_iMatrix(sobely,0);
-	int summe[8] = { 0,0,0,0,0,0,0,0 };
-	for (int i = 1; i < MAXXDIM - 1; i++) {
-		for (int j = 1; j < MAXYDIM - 1; j++) {
-			summe[0] = img[i + 1][j] * -2;
-			summe[1] = img[i - 1][j] * 2;
-			summe[2] = img[i + 1][j + 1] * -1;
-			summe[3] = img[i - 1][j - 1];
-			summe[4] = img[i - 1][j + 1];
-			summe[5] = img[i + 1][j - 1] * -1;
-			for (int z = 0; z < 6; z++)
-				sobely[i][j] += summe[z];
+void sobely(unsigned char img[MAXYDIM][MAXXDIM], int16_t sobely[MAXYDIM][MAXXDIM]) {
+	//init_cMatrix(img2, (PIXEL_DEPTH / 2));
+	unsigned char px_dp2 = PIXEL_DEPTH / 2;
+	//init_iMatrix(sobely,0);
+	for (int x = 1; x < MAXXDIM - 1; x++) {
+		for (int y = 1; y < MAXYDIM - 1; y++) {
+			sobely[y][x] = img[y + 1][x] * -2;
+			sobely[y][x] += img[y - 1][x] * 2;
+			sobely[y][x] += img[y + 1][x + 1] * -1;
+			sobely[y][x] += img[y - 1][x - 1];
+			sobely[y][x] += img[y - 1][x + 1];
+			sobely[y][x] += img[y + 1][x - 1] * -1;
 		}
 	}
 	// Pixelwerte skalieren und Bild schreiben
@@ -662,8 +691,16 @@ void sobely(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAX
 	faktor = (float)(PIXEL_DEPTH / 2) / (float)max;
 	for (int x = 1; x < MAXXDIM - 1; x++)
 		for (int y = 1; y < MAXYDIM - 1; y++)
-			img2[x][y] += (unsigned char)((float)sobely[x][y] * faktor);
-
+			img[y][x] = px_dp2 + (signed char)((float)sobely[y][x] * faktor);
+	// Ränder
+	for(int x = 0; x < MAXXDIM; x++){
+		img[0][x] = px_dp2;
+		img[MAXYDIM][x] = px_dp2;;
+	}
+	for(int y = 0; y < MAXYDIM; y++){
+		img[y][0] = px_dp2;
+		img[y][MAXXDIM] = px_dp2;;
+	}
 }
 
 // Kobination der Operatoren Sobel in x und y Richtung
@@ -686,53 +723,83 @@ void sobelxy(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MA
 }
 
 // zweite Ableitung durch Laplace Operator
-void laplace(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM],int16_t iIMG[MAXYDIM][MAXXDIM], int Umgebung) {
-	init_cMatrix(img2, (PIXEL_DEPTH / 2));
-	for(int x = 0; x < MAXXDIM; x++)for(int y = 0; y < MAXYDIM; y++)img2[y][x] = img[y][x];
-	int summe[3] = { 0,0,0 };
-	int zw = 0;
+void laplace(unsigned char img[MAXYDIM][MAXXDIM], uint16_t framebuffer[MAXYDIM][MAXXDIM], int Umgebung) {
+	unsigned char px_dp2 = PIXEL_DEPTH / 2;
+	uint16_t half_uint16_t= 0xFFFF / 2;
 	// Matrix der Laplace Operation berechnen
 	//Filter auf Bild anwenden
-	init_iMatrix(iIMG,0);
+	//init_iMatrix(iIMG,0);
+	// Ränder initialiseren
+	for(int x = 0; x < MAXXDIM; x++){
+		for(int y = 0; y < MAXYDIM; y++){
+			framebuffer[y][x] = half_uint16_t;
+		}
+	}
+	//uint16_t max = find_abs_extremum_uiMatrix(MAX, framebuffer);
+	//uint16_t min = find_abs_extremum_uiMatrix(MIN, framebuffer);
 	for (int y = 1; y < MAXYDIM- 1; y++) {
 		for (int x = 1; x < MAXXDIM - 1; x++) {
 			if (Umgebung == LAPLACE_4) {
-				summe[0] = img2[y - 1][x];
-				summe[1] = img2[y][x - 1] + (img2[y][x] * (-4)) + img2[y][x + 1];
-				summe[2] = img2[y + 1][x];
+				framebuffer[y][x] = half_uint16_t + img[y - 1][x];
+				framebuffer[y][x] += img[y][x - 1] + (img[y][x] * (-4)) + img[y][x + 1];
+				framebuffer[y][x] += img[y + 1][x];
 			}
 			else if (Umgebung == LAPLACE_8)
 			{
-				summe[0] = img2[y - 1][x - 1] + img2[y - 1][x] + img2[y - 1][x + 1];
-				summe[1] = img2[y][x - 1] + (img2[y][x] * (-8)) + img2[y][x + 1];
-				summe[2] = img2[y + 1][x - 1] + img2[y + 1][x] + img2[y + 1][x + 1];
+				framebuffer[y][x] = half_uint16_t + img[y - 1][x - 1] + img[y - 1][x] + img[y - 1][x + 1];
+				framebuffer[y][x] += img[y][x - 1] + (img[y][x] * (-8)) + img[y][x + 1];
+				framebuffer[y][x] += img[y + 1][x - 1] + img[y + 1][x] + img[y + 1][x + 1];
 			}
-			zw = 0;
-			for (int z = 0; z < 3; z++) {
-				zw += summe[z];
-			}
-			// Dieser Wert kann positiv und negativ sein
-			iIMG[y][x] = zw;
 		}
 	}
 	// Pixelwerte skalieren und Bild schreiben
-	int max = find_abs_extremum_iMatrix(MAX, iIMG);
-	// Skalierung 0<127<255
+	uint16_t max = find_abs_extremum_uiMatrix(MAX, framebuffer);
+	uint16_t min = find_abs_extremum_uiMatrix(MIN, framebuffer);
 	float faktor;
-	faktor = (float)(PIXEL_DEPTH / 2) / (float)max;
-	for (int x = 1; x < MAXXDIM - 1; x++)
-		for (int y = 1; y < MAXYDIM - 1; y++)
-		{
-			img[y][x] += (unsigned char)((float)iIMG[y][x] * faktor);
+	if( (max - half_uint16_t) > (half_uint16_t - min)){
+		if( (half_uint16_t - min) > 0)
+			faktor = (float)(PIXEL_DEPTH / 2) / ((float)(half_uint16_t - min));
+		else
+			faktor = 0.0;
+	}
+	else
+	{
+		if( (max - half_uint16_t) > 0)
+			faktor = (float)(PIXEL_DEPTH / 2) / ((float)(max - half_uint16_t));
+		else
+			faktor = 0.0;
+	}
+	// Skalierung 0<127<255
+
+	faktor = (float)(PIXEL_DEPTH / 2) / ((float)max - (float)min);
+	for (int x = 1; x < MAXXDIM - 1; x++){
+		for (int y = 1; y < MAXYDIM - 1; y++){
+			signed char tmp = (signed char)(((float)(framebuffer[y][x] - half_uint16_t))  * faktor);
+			unsigned char erg = px_dp2 + tmp;
+			img[y][x] = erg;
 		}
+	}
+	// Ränder
+	for(int x = 0; x < MAXXDIM; x++){
+		img[0][x] = px_dp2;
+		img[MAXYDIM][x] = px_dp2;
+	}
+	for(int y = 0; y < MAXYDIM; y++){
+		img[y][0] = px_dp2;
+		img[y][MAXXDIM] = px_dp2;
+	}
 }
-//Difference of Gaussian 
-void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int scale, int grundton)
+// Difference of gaussian
+void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], int scale, int grundton)
 {
+	// TODO: reduce ram usage
+	return ; // TOO LESS RAM...
+#if RAM > 320000
 	// Sicherheitsabfrage
 	if (scale > 50 || scale < 3 || scale % 2 == 0)
 		return;
 	float bin_ver[2][50], diff[50];
+	uint16_t x7fff = 0xFFFF /2;
 	for (int i = 0; i < 50; i++)
 		bin_ver[0][i] = bin_ver[1][i] = diff[i] = 0;
 	// Hole binomialkoeffizienten (Summe normiert auf 100)
@@ -757,8 +824,9 @@ void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 		for (int y = 0; y < scale; y++, a++)
 			diff_of_gauss[x][y] = diff[x] * diff[y];
 	//Filter auf Bild anwenden
-	int iIMG[MAXYDIM][MAXXDIM];
-	init_iMatrix(iIMG,0);
+	for(int x = 0; x < MAXXDIM; x++)
+		for(int y = 0; y < MAXYDIM; y++)
+			iIMG[y][x] = x7fff;
 	// Anfangswerte setzen je nach gerader/ungerader Filtermatrix und Gr��e der Matrix
 	for (int i = scale / 2; i < MAXXDIM - (scale / 2); i++) {
 		for (int j = scale / 2; j < MAXYDIM - (scale / 2); j++)
@@ -768,10 +836,10 @@ void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 			// Anfangswerte setzen je nach gerader/ungerader Filtermatrix, Randproblem beachten
 			for (int x = i - (scale / 2), a = 1; x <= i + (scale / 2); x++, a++) {
 				for (int y = j - (scale / 2), b = 1; y <= j + (scale / 2); y++, b++) {
-					 zw += diff_of_gauss[a][b] * (float)img[x][y];
+					 zw += diff_of_gauss[a][b] * (float)img[y][x];
 				}
 			}
-			iIMG[i][j] = (int)zw;
+			iIMG[j][i] = x7fff + (int16_t)(zw/10);
 		}
 	}
 	// Speicher freigeben
@@ -779,9 +847,16 @@ void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 		free(diff_of_gauss[i]);
 	free(diff_of_gauss);
 	grundton = grundton < 0 ? 0 : grundton > 255 ? 255 : grundton;
-	init_cMatrix(img2, grundton);
+	init_cMatrix(img, grundton);
 	// Pixelwerte skalieren und Bild schreiben
-	int max = find_abs_extremum_iMatrix(MAX, iIMG);
+	uint16_t max  = find_abs_extremum_uiMatrix(MAX, iIMG);
+	uint16_t min  = find_abs_extremum_uiMatrix(MIN, iIMG);
+
+	max = x7fff - min > max - x7fff ? x7fff - min : max - x7fff;
+	// div durch 0 verhindern
+	if(max == 0)
+		return;
+
 	// Skalierung 0<127<255
 	float faktor;
 	faktor = grundton == 0 || grundton == 255 ? (float)255 / (float)max : (float)grundton / (float)max;
@@ -789,26 +864,39 @@ void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 		for (int y = 1; y < MAXYDIM - 1; y++)
 		{
 			if (grundton != 0 && grundton != 255)
-				img2[x][y] += (unsigned char)((float)iIMG[x][y] * faktor);
-			else if (grundton == 0)
-				img2[x][y] = (unsigned char)sqrt(pow((int)((float)iIMG[x][y] * faktor), 2));
-			else if (grundton == 255)
-				img2[x][y] = 255 - (unsigned char)sqrt(pow((int)((float)iIMG[x][y] * faktor), 2));
+				img[x][y] += (unsigned char)((float)(iIMG[x][y]-x7fff) * faktor);
+			else if (grundton == 0){
+				float tmp = (float)(iIMG[x][y]-x7fff) * faktor;
+				if(tmp < 0)
+					tmp *= -1;
+				if( tmp > PIXEL_DEPTH-1)
+					tmp = PIXEL_DEPTH-1;
+				img[x][y] = (unsigned char)tmp;
+			}
+			else if (grundton == 255){
+				float tmp = (float)(iIMG[x][y]-x7fff) * faktor;
+				img[x][y] = (unsigned char) tmp < 0? tmp * -1: tmp;
+			}
 		}
+#endif
 }
+
 
 /***********************************************************************************************************/
 /*                      Texturenerkennung                                                                  */
 /***********************************************************************************************************/
-/*
+
 // Texturenerkennung mit den Laws-Masken
 void laws_textur(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM])
 {
+	// TODO: reduce ram usage
+	return;
+#if RAM > 320000
 	init_cMatrix(img2,255);
 	float fArray[MAXYDIM][MAXXDIM];
 	init_fMatrix(fArray);
 
-	int masken[9][9] = {	 
+	int8_t masken[9][9] = {
 		{-1,0,1,-2,0,2,-1,0,1},		// L3E3
 		{-1,2,-1,-2,4,-2,-1,2,-1},	// L3S3
 		{-1,2,-1,0,0,0,1,-2,1},		// E3L3
@@ -837,12 +925,15 @@ void laws_textur(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM
 	for (int x = 1; x < MAXXDIM - 1; x++)
 		for (int y = 1; y < MAXYDIM - 1; y++)
 			img2[x][y] = (unsigned char)(fArray[x][y] * faktor);
-	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+#endif
 }
 
 // Statistik 2. Ordnung
 void cooccurence_matrix(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], float fimg[MAXYDIM][MAXXDIM], int direction, int save)
 {
+	// TODO: reduce ram usage
+	return;
+#if RAM > 320000
 	init_cMatrix(img2, 255);
 	if(save == 1)
 		init_fMatrix(fIMG);
@@ -885,10 +976,14 @@ void cooccurence_matrix(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[
 	for (int i = 0; i < MAXXDIM; i++)
 		for (int j = 0; j < MAXYDIM; j++)
 			sum += fIMG[i][j];
+#endif
 }
 
 void cooc_matrix_kombi_asm(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], float fimg[MAXYDIM][MAXXDIM], int graustufen)
 {
+	// TODO: reduce ram usage
+	return;
+#if RAM > 320000
 	init_cMatrix(img2, 255);
 	init_fMatrix(fIMG);
 	for (int dir = 0; dir < 4; dir++)
@@ -910,11 +1005,14 @@ void cooc_matrix_kombi_asm(unsigned char img[MAXYDIM][MAXXDIM], unsigned char im
 		}
 	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
 	calc_asm_energie(fIMG);
+#endif
 }
 
 
-void calc_asm_energie(float fimg[MAXYDIM][MAXXDIM])
+void calc_asm_energie(float fIMG[MAXYDIM][MAXXDIM])
 {
+	// TODO: reduce ram usage
+	return;
 	float fASM = 0,sum = 0;
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
@@ -923,26 +1021,22 @@ void calc_asm_energie(float fimg[MAXYDIM][MAXXDIM])
 		for (int y = 0; y < MAXYDIM; y++) 
 			fASM += ((float)pow(fIMG[x][y] / sum, 2));
 			
-	system("cls");
-	printf(" ������������������������������������������������������������ͻ\n");
-	printf(" �  Anzahl der Eintraege in der Matrix:%20f   �\n", sum);
-	printf(" �  Der ASM Wert des Bildes betraegt:%22f   �\n",fASM);
-	printf(" �  Druecken Sie eine Taste um zurueck zum Menu zu gelangen.  �\n");
-	printf(" ������������������������������������������������������������ͼ\n");
-	printf("\n");
-	getch();
+	//printf(" �  Anzahl der Eintraege in der Matrix:%20f   �\n", sum);
+	//printf(" �  Der ASM Wert des Bildes betraegt:%22f   �\n",fASM);
+	//printf(" �  Druecken Sie eine Taste um zurueck zum Menu zu gelangen.  �\n");
+
 }
-*/
+
 /***********************************************************************************************************/
 /*                      Segmentierung                                                                      */
 /***********************************************************************************************************/
-/*
-void segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM])
+
+uint16_t segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM])
 {
 
 	// Verfahren von Otsu
 	// optimaler Schwellwert
-	int iSchwelle = 0;
+	uint16_t iSchwelle = 0;
 	float dim_xy = (float)(MAXXDIM*MAXYDIM);
 	float grey[PIXEL_DEPTH];
 	calc_rel_histo(img, grey);
@@ -989,22 +1083,19 @@ void segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM], unsigned char i
 			iSchwelle = g;
 		}
 	}
-	printf("Der Schwellwert nach Otsu: %3i\n", iSchwelle);
-	printf("Druecken Sie eine beliebige Taste, um die Operation durchzufuehren.\n");
-	getch();
-	fflush(stdin);
-	segmentierung_binaer(img, img2, iSchwelle);
+	segmentierung_binaer(img, iSchwelle);
+	return iSchwelle;
 }
 
-void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int threshold)
+void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], uint16_t threshold)
 {
 	for (int x = 0; x < MAXXDIM; x++)
 		for (int y = 0; y < MAXYDIM; y++)
-			img2[x][y] = img[x][y] <= threshold ? 0 : 255;
-	writeImage_ppm(img2, MAXXDIM, MAXYDIM);
+			img[y][x] = img[y][x] <= threshold ? 0 : 255;
 }
 
 // Blob-Coloring mit L�sung der Ausfransungen, mit Iterationsverfahren zum Verbessern der Segmentierung
+/*
 void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][MAXXDIM],
 		int intervall, int keine_fransen, int writeImage, int iterationen)
 {
@@ -1131,126 +1222,143 @@ void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned c
 	getch();
 	fflush(stdin);
 }
+*/
 
-unsigned int find_blobs(unsigned char img[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][MAXXDIM], int bereich){
-	init_iMatrix(iIMG);
+uint16_t find_blobs(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t bereich){
+	init_iMatrix(iIMG, 0);
 	unsigned int blob = 0;
 	int dy = 0, dx = 0;
 
 	for (int x = 1; x < MAXXDIM; x++){
 		for (int y = 1; y < MAXYDIM; y++)
 		{
-			dy = img[x][y]-img[x][y-1];
+			dy = img[y][x]-img[y][x-1];
 			dy = dy < 0 ? dy * -1 : dy;
-			dx = img[x][y]-img[x-1][y];
+			dx = img[y][x]-img[y-1][x];
 			dx = dx < 0 ? dx * -1 : dx;
 			//       Diff( x_c, x_l) > bereich                                && Diff( x_c, x_u) > bereich    -> x_c = neues Label
 			if (dy > bereich && dx > bereich)
-				iIMG[x][y] = ++blob;
+				iIMG[y][x] = ++blob;
 			//      Diff( x_c, x_l) <= bereich                                && Diff( x_c, x_u) <= bereich   -> x_c = x_u
 			else if (dy <= bereich && dx <= bereich) {
 				//Grauwerte sind im Intervall, aber die labels im Merker sind nicht identisch -> falsches label
-				if (iIMG[x - 1][y] != iIMG[x][y - 1]){
+				if (iIMG[y - 1][x] != iIMG[y][x - 1]){
 					// Label überscheiben! Höherwertiges Label wird überschrieben, da dies falsch inkrementiert wurde
-					int old_label = iIMG[x - 1][y] > iIMG[x][y - 1] ? iIMG[x - 1][y] : iIMG[x][y - 1];
-					int new_label = iIMG[x - 1][y] > iIMG[x][y - 1] ? iIMG[x][y - 1] : iIMG[x - 1][y];
+					uint16_t old_label = iIMG[y - 1][x] > iIMG[y][x - 1] ? iIMG[y - 1][x] : iIMG[y][x - 1];
+					uint16_t new_label = iIMG[y - 1][x] > iIMG[y][x - 1] ? iIMG[y][x - 1] : iIMG[y - 1][x];
 					--blob;
 					reset_blob_label(iIMG, old_label, new_label);
 				}
 				// nun gewönlich x_u, x_c zuweisen
-				iIMG[x][y] = iIMG[x - 1][y];
+				iIMG[y][x] = iIMG[y - 1][x];
 			}
 			//      Diff( x_c, x_l) <= bereich                                && Diff( x_c, x_u) > bereich
 			else if (dy <= bereich && dx > bereich)
-					iIMG[x][y] = iIMG[x][y - 1];
+					iIMG[y][x] = iIMG[y][x - 1];
 			//      Diff( x_c, x_l) > bereich                                && Diff( x_c, x_u) <= bereich
 			else if (dy > bereich && dx <= bereich)
-				iIMG[x][y] = iIMG[x - 1][y];
+				iIMG[y][x] = iIMG[y - 1][x];
 		}
 	}
 	return blob;
 }
 
 // Blob-Coloring mit Lösung der Ausfransungen, ohne Iterationsverafahren: zum segmentieren von einfachen Objekten ( evtl binaerisiert )
-void blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][MAXXDIM], int bereich, int writeImage)
+uint16_t blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], int bereich, int writeImage)
 {
-	find_blobs(img,iIMG, bereich);
+	uint16_t blobs = find_blobs(img,iIMG, bereich);
 	// Blob-Coloring nur als Bild schreiben, wenn es direkt aus dem Menu aufgreufen wird
 	// handelt es sich um ein Binaerbild ?
 	init_cMatrix(img2, 0);
 	if (writeImage == 1) {
-		int max = find_abs_extremum_iMatrix(MAX, iIMG);
+		uint16_t max = find_abs_extremum_uiMatrix(MAX, iIMG);
 		float faktor = (float)(PIXEL_DEPTH - 1) / (float)max;
 		for (int x = 0; x < MAXXDIM; x++)
 			for (int y = 0; y < MAXYDIM; y++)
-				img2[x][y] = (unsigned char)((float)iIMG[x][y] * faktor);
-		writeImage_ppm(img2, MAXXDIM, MAXYDIM);
-		system("cls");
-		printf("Anzahl der Blobs: %i", max);
-		getch();
-		fflush(stdin);
+				img[y][x] = (unsigned char)((float)iIMG[y][x] * faktor);
 	}
+	return blobs;
 }
 
-// Funktion zur erstellen eines Berichtes �ber Tablettenblister f�r Pr�sentation
-void blister_blob(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iimg[MAXYDIM][MAXXDIM])
+void bubblesort_blob(Blob *blobs, int length)
 {
-	int iOben = 1380, iUnten = 1310;
-	// Blob-Coloring ohne schreiben des Bildes aufrufen.
-	blob_coloring_markersensitiv(img, img2, iIMG, 20,0);
-	int max_blob = find_abs_extremum_iMatrix(MAX,iIMG);
+	for (int i = 0; i < length - 1; ++i)
+		for (int j = 0; j < length - i - 1; ++j)
+			if (blobs[j].blob_size > blobs[j + 1].blob_size) {
+				Blob tmp;
+				tmp.blob_size= blobs[j].blob_size;
+				tmp.blob_label= blobs[j].blob_label;
+				blobs[j].blob_size = blobs[j + 1].blob_size;
+				blobs[j].blob_label = blobs[j + 1].blob_label;
+				blobs[j + 1].blob_size = tmp.blob_size;
+				blobs[j + 1].blob_label = tmp.blob_label;
+			}
+}
+
+// Annahme: Der groesste Blob ist der Hintergrund
+// Der zweitgroesste Blob ist das Hauptobjekt des Bildes
+// Alle anderen werden dem Hintergrund gleich gemacht
+// Der Hintergrund wird mit 255 markiert
+// Das Objekt mit 0
+
+void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM],uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t background_threshold, uint16_t min_blobsize){
+
+	return;
+	// TODO: reduce ram usage or get bigger ram
+	// Marker Matrix mit 0 initialisieren
+	//memset(iIMG,0,sizeof(iIMG));
+	init_iMatrix(iIMG, 0);
+	// Als erstes Oberhalb des Schwellwertes alle Pixel auf 255 schreiben
+	for (int x = 0; x < MAXXDIM; x++)
+		for (int y = 0; y < MAXYDIM; y++)
+			if((img[y][x] >= background_threshold))
+				img[y][x] = 255;
+	// markiere alle blobs (farbabstufungbeim erreichnen 10)
+	unsigned int max_blob = find_blobs(img,iIMG,10);
+	//printf("blob count %i\n",max_blob);
 
 	// dynamisch Speicher reservieren, direkt mit 0 initialisiert
-	int *groesse_blobs = (int*)calloc(max_blob+1, sizeof(int));
-	int *ist_tablette = (int*)calloc(max_blob+1, sizeof(int));
-
-	for (int i = 0; i <= max_blob; i++)
-		for (int x = 0; x < MAXXDIM; x++)
-			for (int y = 0; y < MAXYDIM; y++)
-				if (iIMG[x][y] == i)
-					groesse_blobs[i]++;
-	for (int ok = 0; ok <= max_blob; ok++)
-		ist_tablette[ok] = (groesse_blobs[ok] > iUnten && groesse_blobs[ok] < iOben) ? 1 : 0;
-
-
-	FILE *fp;
-	char line[100];
-	fp = fopen("c:\\bv\\report.txt", "w");
-	if (fp == NULL) 
-		printf("Datei konnte nicht geoeffnet werden.\n");
-	else {
-		sprintf(line, "Anzahl der Blobs: %10i\n", max_blob);
-		fputs(line, fp);
-		sprintf(line, "Tablette definiert durch die Groesse g: [%5i < g <%5i]\n", iUnten, iOben);
-		fputs(line, fp);
-		fputs("\n", fp);
-		for (int i = 0; i<=max_blob; i++) {
-			sprintf(line, "Blob %3i Flaecheninhalt: %10i\n", i, groesse_blobs[i]);
-			fputs(line, fp);
-			if (ist_tablette[i] == 1)
-				sprintf(line, "Blob %3i:Tablette\n", i);
-			else
-				sprintf(line, "Blob %3i:keine Tablette \n", i);
-			fputs(line, fp);
+	//Blob *blobs = (Blob*)calloc(max_blob+1, sizeof(Blob));
+	Blob *blobs = (Blob*)malloc((max_blob*  sizeof(Blob)) +1);
+	memset(blobs, 0, max_blob);
+	// Blobgroessen und das entsprechende Label ermitteln
+	for (int x = 0; x < MAXXDIM; x++){
+		for (int y = 0; y < MAXYDIM; y++){
+			blobs[iIMG[y][x]].blob_size++;
+			blobs[iIMG[y][x]].blob_label = iIMG[y][x];
 		}
-		int anz_zab = 0;
-		for (int i = 0; i <= max_blob; i++)
-		{
-			if (ist_tablette[i] == 1)
-				anz_zab++;
-		}
-		fputs("\n", fp);
-		sprintf(line, "Die Anzahl der Tabletten betraegt: %i", anz_zab);
-		fputs(line, fp);
-		fclose(fp);
 	}
-	free(groesse_blobs);
-	free(ist_tablette);
-	printf("Report wurde erstellt.\n");
-	printf("Druecken Sie eine Taste.");
-	getch();
+	// den groessten Blob finden
+	Blob biggest_blob;
+	memset(&biggest_blob,0,sizeof(Blob));
+	for(int i = 0; i < (max_blob+1); i++){
+		if(blobs[i].blob_size > biggest_blob.blob_size){
+			biggest_blob.blob_size = blobs[i].blob_size;
+			biggest_blob.blob_label = blobs[i].blob_label;
+		}
+	}
+	// Alle Blobs löschen ausser den Hintergrund und das Objekt
+	for (int x = 0; x < MAXXDIM; x++)
+		for (int y = 0; y < MAXYDIM; y++)
+			if(iIMG[y][x] == biggest_blob.blob_label)// Hintergrund
+				img[y][x] = 255;
+			else if(blobs[iIMG[y][x]].blob_size > min_blobsize)	// Objekt
+				img[y][x] = 0;
+			else
+				img[y][x] = 255;	// Unwichtige Blobs-> Hintergrund
+	free(blobs);
 }
 
+void invert(unsigned char img[MAXYDIM][MAXXDIM]){
+	for(int x = 0 ; x < MAXXDIM; x++)
+		for(int y = 0; y < MAXYDIM; y++){
+
+			img[y][x] = (255) - img[y][x];
+		}
+}
+
+
+/*
 Schwerpunkt schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM], unsigned int bloblabel){
 	printf("blob label %u\n", bloblabel);
 	Schwerpunkt s;
@@ -1321,76 +1429,9 @@ void zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned int bloblabe
 		getch_(0);
 	}
 }
-// Annahme: Der groesste Blob ist der Hintergrund
-// Der zweitgroesste Blob ist das Hauptobjekt des Bildes
-// Alle anderen werden dem Hintergrund gleich gemacht
-// Der Hintergrund wird mit 255 markiert
-// Das Objekt mit 0
+*/
 
-
-
-void bubblesort_blob(Blob *blobs, int length)
-{
-	for (int i = 0; i < length - 1; ++i)
-		for (int j = 0; j < length - i - 1; ++j)
-			if (blobs[j].blob_size > blobs[j + 1].blob_size) {
-				Blob tmp;
-				tmp.blob_size= blobs[j].blob_size;
-				tmp.blob_label= blobs[j].blob_label;
-				blobs[j].blob_size = blobs[j + 1].blob_size;
-				blobs[j].blob_label = blobs[j + 1].blob_label;
-				blobs[j + 1].blob_size = tmp.blob_size;
-				blobs[j + 1].blob_label = tmp.blob_label;
-			}
-}
-
-void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM],unsigned int iimg[MAXYDIM][MAXXDIM], int background_threshold, int min_blobsize){
-	printf("min blobsize %i\n", min_blobsize);
-	// Marker Matrix mit 0 initialisieren
-	memset(iIMG,0,sizeof(iIMG));
-	// Als erstes Oberhalb des Schwellwertes alle Pixel auf 255 schreiben
-	for (int x = 0; x < MAXXDIM; x++)
-		for (int y = 0; y < MAXYDIM; y++)
-			if((img[x][y] >= background_threshold))
-				img[x][y] = 255;
-	// markiere alle blobs (farbabstufungbeim erreichnen 10)
-	unsigned int max_blob = find_blobs(img,iIMG,5);
-	printf("blob count %i\n",max_blob);
-
-	// dynamisch Speicher reservieren, direkt mit 0 initialisiert
-	//Blob *blobs = (Blob*)calloc(max_blob+1, sizeof(Blob));
-	Blob *blobs = (Blob*)malloc((max_blob*  sizeof(Blob)) +1);
-	memset(blobs, 0, max_blob);
-	// Blobgroessen und das entsprechende Label ermitteln
-	for (int x = 0; x < MAXXDIM; x++){
-		for (int y = 0; y < MAXYDIM; y++){
-			blobs[iIMG[x][y]].blob_size++;
-			blobs[iIMG[x][y]].blob_label = iIMG[x][y];
-		}
-	}
-	// den groessten Blob finden
-	Blob biggest_blob;
-	memset(&biggest_blob,0,sizeof(Blob));
-	for(int i = 0; i < (max_blob+1); i++){
-		if(blobs[i].blob_size > biggest_blob.blob_size){
-			biggest_blob.blob_size = blobs[i].blob_size;
-			biggest_blob.blob_label = blobs[i].blob_label;
-		}
-	}
-	// Alle Blobs löschen ausser den Hintergrund und das Objekt
-	for (int x = 0; x < MAXXDIM; x++)
-		for (int y = 0; y < MAXYDIM; y++)
-			if(iIMG[x][y] == biggest_blob.blob_label)// Hintergrund
-				img[x][y] = 255;
-			else if(blobs[iIMG[x][y]].blob_size > min_blobsize)	// Objekt
-				img[x][y] = 0;
-			else
-				img[x][y] = 255;	// Unwichtige Blobs-> Hintergrund
-	free(blobs);
-	writeImage_ppm(img, MAXXDIM, MAXYDIM);
-
-}
-
+/*
 Momente widerstandsmomente(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned int object_label){
 	// Widerstandsmoment I_x: Summe(x^2*dA)
 	Momente m;
@@ -1547,45 +1588,7 @@ double winkel_rechteck(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsign
 }
 
 
-void invert(unsigned char img[MAXYDIM][MAXXDIM]){
-	for(int x = 0 ; x < MAXXDIM; x++)
-		for(int y = 0; y < MAXYDIM; y++){
 
-			img[x][y] = (255) - img[x][y];
-		}
-	writeImage_ppm(img,MAXXDIM, MAXYDIM);
-}
-*/
-
-/*
-void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM], int background_threshold){
-	int biggest_blob = 0;
-	int greyscale = 0;
-	int abs_px[PIXEL_DEPTH];
-	printf("calc histo\n");
-	calc_absolut_histo(img,abs_px);
-	printf("calc color of biggest blobs\n");
-	for(int i = 0; i < PIXEL_DEPTH; i++){
-		if(i >= background_threshold)
-			continue;
-		if(abs_px[i] > biggest_blob){
-			biggest_blob = abs_px[i];
-			greyscale = i;
-		}
-	}
-	printf("Goesster Blob:         %i\n",biggest_blob);
-	printf("Goesster Blob Farbe:   %i\n",greyscale);
-	// Alle blobs loeschen, die nicht zu den beiden groessten gehoeren
-	printf("delete other blobs\n");
-	for (int x = 0; x < MAXXDIM; x++){
-		for (int y = 0; y < MAXYDIM; y++){
-			if((img[x][y] >= background_threshold) || (img[x][y] != greyscale)){
-				img[x][y] = 255;
-			}
-		}
-	}
-	writeImage_ppm(img, MAXXDIM, MAXYDIM);
-}
 */
 
 

@@ -16,6 +16,8 @@
 #define PIXEL_DEPTH 256
 #define HISTO_KUMULATIV 1
 #define HISTO_NORMAL 0
+
+#define RAM 320000
 // 153600 bytes
 extern uint16_t framebuffer[OV7670_QVGA_HEIGHT ][OV7670_QVGA_WIDTH];
 // 76800 bytes

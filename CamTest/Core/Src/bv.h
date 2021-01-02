@@ -63,13 +63,14 @@ void mittelwert_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[M
 
 // Kantendetektion
 
-void sobelx(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int16_t sobelx[MAXYDIM][MAXXDIM]);
-void sobely(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int16_t sobely[MAXYDIM][MAXXDIM]);
+//void sobelx(unsigned char img[MAXYDIM][MAXXDIM], int16_t sobelx[MAXYDIM][MAXXDIM]);
+void sobelx(unsigned char img[MAXYDIM][MAXXDIM], int16_t sobelx[MAXYDIM][MAXXDIM]);
+void sobely(unsigned char img[MAXYDIM][MAXXDIM], int16_t sobely[MAXYDIM][MAXXDIM]);
 // too less ram
 //void sobelxy(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int16_t sobelx[MAXYDIM][MAXXDIM], int16_t sobely[MAXYDIM][MAXXDIM]);
-void laplace(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM],int16_t iIMG[MAXYDIM][MAXXDIM], int Umgebung);
-void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int scale, int grundton);
-/*
+void laplace(unsigned char img[MAXYDIM][MAXXDIM],uint16_t framebuffer[MAXYDIM][MAXXDIM], int Umgebung);
+void difference_of_gaussian(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], int scale, int grundton);
+
 // Texturen
 void laws_textur(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]);
 void cooccurence_matrix(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], float fIMG[MAXYDIM][MAXXDIM], int direction, int save);
@@ -77,16 +78,17 @@ void cooc_matrix_kombi_asm(unsigned char img[MAXYDIM][MAXXDIM], unsigned char im
 void calc_asm_energie(float fIMG[MAXYDIM][MAXXDIM]);
 
 //Segmentierung
-void segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]);
-void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int threshold);
-void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iIMG[MAXYDIM][MAXXDIM],
-		int iteration, int keine_fransen, int writeImage, int iterationen);
-void blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iIMG[MAXYDIM][MAXXDIM], int bereich, int writeImage);
-void blister_blob(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iIMG[MAXYDIM][MAXXDIM]);
-void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM],unsigned int iIMG[MAXYDIM][MAXXDIM], int background_threshold, int min_blobsize);
+uint16_t segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM]);
+void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], uint16_t threshold);
 void invert(unsigned char img[MAXYDIM][MAXXDIM]);
-//void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM], int background_threshold);
+//void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iIMG[MAXYDIM][MAXXDIM],
+//		int iteration, int keine_fransen, int writeImage, int iterationen);
+uint16_t find_blobs(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t bereich);
+uint16_t blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], int bereich, int writeImage);
+void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM],uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t background_threshold, uint16_t min_blobsize);
 
+
+/*
 // Merkmalsextraktion
 void zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned int bloblabel);
 Schwerpunkt schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned int bloblabel);
@@ -100,12 +102,13 @@ void frambuffer_test(unsigned char cMatrix[MAXYDIM][MAXXDIM]);
 void init_cMatrix(unsigned char cMatrix[MAXYDIM][MAXXDIM], unsigned char val);
 void init_iMatrix(uint16_t iMatrix[MAXYDIM][MAXXDIM] , uint16_t val);
 //void init_fMatrix(float fMatrix[MAXYDIM][MAXXDIM]);
-int16_t  find_abs_extremum_iMatrix(int16_t min_max, int16_t iMatrix[MAXYDIM][MAXXDIM]);
+int16_t find_abs_extremum_iMatrix(int16_t min_max, int16_t iMatrix[MAXYDIM][MAXXDIM]);
+uint16_t find_abs_extremum_uiMatrix(uint16_t min_max, uint16_t uiMatrix[MAXYDIM][MAXXDIM]);
 //float  find_abs_extremum_fMatrix(int min_max, float fMatrix[MAXYDIM][MAXXDIM]);
 void get_bin_koeff(float bin_ver[50], int n, float normierung);
 double fakultaet(int n);
 void bubblesort(int *array, int length);
-//void reset_blob_label(uint16_t iIMG[MAXYDIM][MAXXDIM], int oldLabel, int newLabel);
+void reset_blob_label(uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t oldLabel, uint16_t newLabel);
 void rgb_to_greyscale(uint16_t iIMG[MAXYDIM][MAXXDIM], unsigned char img[MAXYDIM][MAXXDIM]);
 
 
