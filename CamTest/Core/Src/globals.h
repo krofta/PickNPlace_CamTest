@@ -13,6 +13,7 @@
 
 #define MAXXDIM 320
 #define MAXYDIM 240
+#define MAXBLOBS 10000
 #define PIXEL_DEPTH 256
 #define HISTO_KUMULATIV 1
 #define HISTO_NORMAL 0
@@ -22,8 +23,6 @@
 extern uint16_t framebuffer[OV7670_QVGA_HEIGHT ][OV7670_QVGA_WIDTH];
 // 76800 bytes
 extern unsigned char img[MAXYDIM ][MAXXDIM];
-// 76800 bytes
-extern unsigned char img2[MAXYDIM][MAXXDIM];
 // 9 bytes
 extern uint8_t btn_enc;
 extern uint8_t pic_captured;

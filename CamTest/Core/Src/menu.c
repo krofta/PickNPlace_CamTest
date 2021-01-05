@@ -163,6 +163,7 @@ void menu_segmentation(){
 		if(btn_enc){
 			HAL_Delay(300);
 			btn_enc = 0;
+			BlobColoring ColInfo;
 			switch (cursorLine)
 			{
 			case 0:
@@ -178,13 +179,23 @@ void menu_segmentation(){
 				show_image(1);
 				break;
 			case 3:
-				blobs = blob_coloring_markersensitiv(img, framebuffer, 10, 1);
-				sprintf(buf,"%hu",blobs);
+				segmentierung_binaer(img, 75);
+
+				bwLabel(img, framebuffer, &ColInfo);
+				labelMatrixToImage(framebuffer, img, &ColInfo);
+				bwLabelDeleteSmallBlobs(framebuffer, 100, &ColInfo);
+				bwLabelJoinBlobs(framebuffer, &ColInfo);
+				labelMatrixToImage(framebuffer, img, &ColInfo);
+				//Schwerpunkt s = schwerpunkt(img, 255);
+				zeige_schwerpunkt(img, 0);
+				//blobs = blob_coloring_markersensitiv(img, framebuffer, 10, 1);
+				//sprintf(buf,"%hu",blobs);
 				show_image(1);
+
 				ST7789_WriteString(10, 20, buf, Font_11x18, WHITE, BLACK);
 				break;
 			case 4:
-				biggestBlob(img, framebuffer, 200, 150);
+				//biggestBlob(img, framebuffer, 200, 150);
 				show_image(1);
 				break;
 			case 5:
@@ -300,11 +311,11 @@ void menu_pre_processing(){
 				show_image(1);
 				break;
 			case 4:
-				mittelwert_filter(img, img2, 3, 1);
+				mittelwert_filter(img, 3, 1);
 				show_image(1);
 				break;
 			case 5:
-				median_filter3x3(img, img2);
+				median_filter3x3(img);
 				show_image(1);
 				break;
 			case 6:

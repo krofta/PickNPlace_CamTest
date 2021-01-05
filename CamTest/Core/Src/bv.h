@@ -14,10 +14,6 @@
 #define NICHT_SKALIERT 1
 
 // Strukturen zur vereinfachung
-typedef struct {
-     unsigned int blob_label;
-     unsigned int blob_size;
-} Blob;
 
 typedef struct {
 	unsigned int x1;
@@ -39,6 +35,13 @@ typedef struct{
 	long int Ixy;	// Deviationsmoment in xy Richtung
 } Momente;
 
+typedef struct{
+	unsigned int biggestBlobPxCount;
+	unsigned int biggestBlobLabel;
+	unsigned int BlobCount;
+}BlobColoring;
+
+
 
 // bin�re Bildverarbeitung
 /*
@@ -57,8 +60,8 @@ void linearer_histo_ausgleich(unsigned char img[MAXYDIM][MAXXDIM], int anzGrauWe
 void calc_absolut_histo(unsigned char img[MAXYDIM][MAXXDIM], int grey[PIXEL_DEPTH]);
 void calc_kumulativ_histo(unsigned char img[MAXYDIM][MAXXDIM], int grey[PIXEL_DEPTH]);
 void median_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iDIMxy);
-void median_filter3x3(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM]);
-void mittelwert_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iDIMxy, int Gewichtung);
+void median_filter3x3(unsigned char img[MAXYDIM][MAXXDIM]);
+void mittelwert_filter(unsigned char img[MAXYDIM][MAXXDIM], int iDIMxy, int Gewichtung);
 //void gauss_filter(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int scale);
 
 // Kantendetektion
@@ -81,22 +84,23 @@ void calc_asm_energie(float fIMG[MAXYDIM][MAXXDIM]);
 uint16_t segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM]);
 void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], uint16_t threshold);
 void invert(unsigned char img[MAXYDIM][MAXXDIM]);
-//void blob_coloring_imagesensitiv(unsigned char img[MAXYDIM][MAXXDIM], unsigned char img2[MAXYDIM][MAXXDIM], int iIMG[MAXYDIM][MAXXDIM],
-//		int iteration, int keine_fransen, int writeImage, int iterationen);
-uint16_t find_blobs(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t bereich);
-uint16_t blob_coloring_markersensitiv(unsigned char img[MAXYDIM][MAXXDIM], uint16_t iIMG[MAXYDIM][MAXXDIM], int bereich, int writeImage);
-void biggestBlob(unsigned char img[MAXYDIM][MAXXDIM],uint16_t iIMG[MAXYDIM][MAXXDIM], uint16_t background_threshold, uint16_t min_blobsize);
+
+int bwLabel(unsigned char img[MAXYDIM][MAXXDIM],uint16_t label[MAXYDIM][MAXXDIM], BlobColoring *ColInfo);
+int bwLabelDeleteSmallBlobs(uint16_t label[MAXYDIM][MAXXDIM], int minBlobSize, BlobColoring *ColInfo);
+int bwLabelJoinBlobs(uint16_t label[MAXYDIM][MAXXDIM], BlobColoring *ColInfo);
+void labelMatrixToImage(uint16_t label[MAXYDIM][MAXXDIM], unsigned char img[MAXYDIM][MAXXDIM],BlobColoring *ColInfo);
 
 
-/*
+
+
 // Merkmalsextraktion
-void zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned int bloblabel);
-Schwerpunkt schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned int bloblabel);
-Momente widerstandsmomente(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned int object_label);
-void zeige_rotation(unsigned char img[MAXYDIM][MAXXDIM], unsigned int object_label);
+void zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned char bloblabel);
+Schwerpunkt schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned char bloblabel);
+Momente widerstandsmomente(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned char bloblabel);
+void zeige_rotation(unsigned char img[MAXYDIM][MAXXDIM], unsigned char bloblabel);
 double orientierung(Momente m);
 double winkel_rechteck(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned int bloblabel);
-*/
+
 // Anderes
 void frambuffer_test(unsigned char cMatrix[MAXYDIM][MAXXDIM]);
 void init_cMatrix(unsigned char cMatrix[MAXYDIM][MAXXDIM], unsigned char val);
