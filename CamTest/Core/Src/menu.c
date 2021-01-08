@@ -17,6 +17,7 @@ uint16_t cursorLine = 0;
 extern TIM_HandleTypeDef htim8;
 extern uint8_t btn_enc;
 
+
 uint16_t segmentierung_von_otsu(unsigned char img[MAXYDIM][MAXXDIM]);
 void segmentierung_binaer(unsigned char img[MAXYDIM][MAXXDIM], uint16_t threshold);
 void invert(unsigned char img[MAXYDIM][MAXXDIM]);
@@ -73,8 +74,10 @@ char *main_menu_opts[OPTS_MAIN_MENU] = {
 		"Camera settings"
 };
 
+Blob blob;
+
 void capture_image(int manu){
-	led_fill(55,55,55);
+	led_fill(20,20,20);
 	led_show();
 
 	HAL_Delay(10);
@@ -179,20 +182,20 @@ void menu_segmentation(){
 				show_image(1);
 				break;
 			case 3:
-				segmentierung_binaer(img, 75);
-
+				memset(&blob,0,sizeof(Blob));
+				//median_filter3x3(img);
+				segmentierung_binaer(img, 30);
 				bwLabel(img, framebuffer, &ColInfo);
-				labelMatrixToImage(framebuffer, img, &ColInfo);
 				bwLabelDeleteSmallBlobs(framebuffer, 100, &ColInfo);
 				bwLabelJoinBlobs(framebuffer, &ColInfo);
 				labelMatrixToImage(framebuffer, img, &ColInfo);
-				//Schwerpunkt s = schwerpunkt(img, 255);
-				zeige_schwerpunkt(img, 0);
-				//blobs = blob_coloring_markersensitiv(img, framebuffer, 10, 1);
-				//sprintf(buf,"%hu",blobs);
+				//blob.blob_label = 255;
+				schwerpunkt(img,&blob);
+				blobOrientationPCA(img,&blob);
+				show_orientation(img,&blob,128);
+				zeige_schwerpunkt(img,&blob, 128);
 				show_image(1);
 
-				ST7789_WriteString(10, 20, buf, Font_11x18, WHITE, BLACK);
 				break;
 			case 4:
 				//biggestBlob(img, framebuffer, 200, 150);

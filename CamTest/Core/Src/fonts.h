@@ -12,7 +12,7 @@ typedef struct {
 //Font lib.
 extern FontDef Font_7x10;
 extern FontDef Font_11x18;
-extern FontDef Font_16x26;
+//extern FontDef Font_16x26;
 
 //16-bit(RGB565) Image lib.
 /*******************************************

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "bv.h"
+#include "fonts.h"
 
 
 
@@ -1298,236 +1299,426 @@ void labelMatrixToImage(uint16_t label[MAXYDIM][MAXXDIM], unsigned char img[MAXY
 }
 
 
-
-
-
-Schwerpunkt schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM], unsigned char bloblabel){
-	//printf("blob label %u\n", bloblabel);
-	Schwerpunkt s;
-	memset(&s,0,sizeof(Schwerpunkt));
-	s.boundary_box.x1 = MAXXDIM;
-	s.boundary_box.y1 = MAXYDIM;
-	double sx = 0, sy = 0;
+int schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM], Blob *s){
+	//printf("blob label %u\n", s->blob_label);
+	s->b.x2 = s->b.y2 = 0;
+	s->b.x1 = MAXXDIM;
+	s->b.y1 = MAXYDIM;
+	float sx = 0, sy = 0;
 	for (int x = 0; x < MAXXDIM; x++){
 		for (int y = 0; y < MAXYDIM; y++){
-			if(img[y][x] == bloblabel){
-				++s.A;
+			if((unsigned int)img[y][x] == s->blob_label){
+				++s->A;
 				// für boundary box
-				s.boundary_box.x1 = x < s.boundary_box.x1 ? x : s.boundary_box.x1;
-				s.boundary_box.x2 = x > s.boundary_box.x2 ? x : s.boundary_box.x2;
-				s.boundary_box.y1 = y < s.boundary_box.y1 ? y : s.boundary_box.y1;
-				s.boundary_box.y2 = y > s.boundary_box.y2 ? y : s.boundary_box.y2;
+				s->b.x1 = x < s->b.x1 ? x : s->b.x1;
+				s->b.x2 = x > s->b.x2 ? x : s->b.x2;
+				s->b.y1 = y < s->b.y1 ? y : s->b.y1;
+				s->b.y2 = y > s->b.y2 ? y : s->b.y2;
 				// für flächenschwerpunkt
 				// +0,5 weil der 0. Pixel einen abstand zu 0 von 0,5 hat.
-				sx += (double)x+0.5;
-				sy += (double)y+0.5;
+				sx += (float)x+0.5;
+				sy += (float)y+0.5;
 			}
 		}
 	}
-	if(s.A > 0){
-		sx /= (double)s.A;
-		sy /= (double)s.A;
+	if(s->A > 0){
+		sx /= (float)s->A;
+		sy /= (float)s->A;
 	}
-	s.x = (unsigned int)sx;
-	s.y = (unsigned int)sy;
-	return s;
+	s->s.fx = sx;
+	s->s.fy = sy;
+	s->s.x = (int)sx;
+	s->s.y = (int)sy;
+	return 0;
 }
 
-void zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned char bloblabel){
-	//printf("blob label %u\n", bloblabel);
-	Schwerpunkt s = schwerpunkt(img, bloblabel);
-	if(s.A > 0){
-		// Test direkt momente Berechnen
-		Momente m = widerstandsmomente(img, s, bloblabel);
-		//printf("Ix: %ld\n",m.Ix);
-		//printf("Iy: %ld\n",m.Iy);
-		//printf("Ixy: %ld\n",m.Ixy);
-
+int zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],Blob *blob, unsigned char drawlabel){
+	if(blob->A > 0){
 		//Markiere Schwerpunkt im Bild
 		for(int x = 0; x< MAXXDIM; x++)
-			img[s.y][x] = bloblabel - (PIXEL_DEPTH/2);
+			img[blob->s.y][x] = drawlabel;
 		for(int y = 0; y< MAXXDIM; y++)
-			img[y][s.x] = bloblabel - (PIXEL_DEPTH/2);
+			img[y][blob->s.x] = drawlabel;
 
 		// Boundary Box im Bild Markieren
-		for(int x = s.boundary_box.x1; x <= s.boundary_box.x2; x++){
-			img[s.boundary_box.y1][x] = bloblabel - (PIXEL_DEPTH/2);
-			img[s.boundary_box.y2][x] = bloblabel - (PIXEL_DEPTH/2);
+		for(int x = blob->b.x1; x <= blob->b.x2; x++){
+			img[blob->b.y1][x] = drawlabel;
+			img[blob->b.y2][x] = drawlabel;
 		}
-		for(int y = s.boundary_box.y1; y <= s.boundary_box.y2; y++){
-			img[y][s.boundary_box.x1] = bloblabel - (PIXEL_DEPTH/2);
-			img[y][s.boundary_box.x2] = bloblabel - (PIXEL_DEPTH/2);
+		for(int y = blob->b.y1; y <= blob->b.y2; y++){
+			img[y][blob->b.x1] = drawlabel;
+			img[y][blob->b.x2] = drawlabel;
 		}
-		//printf("Schwerpunkt x: %i\n", s.x);
-		//printf("Schwerpunkt y: %i\n", s.y);
-		//printf("P1xy(%i,%i)P2xy(%i,%i)P3xy(%i,%i)P4xy(%i,%i)\n", s.boundary_box.x1, s.boundary_box.y1, s.boundary_box.x2, s.boundary_box.y1, s.boundary_box.y2, s.boundary_box.x1, s.boundary_box.x2, s.boundary_box.y2);
-		//printf("Fläche       : %i\n", s.A);
-		//printf("Press key to save result\n");
-		//writeImage_ppm(img, MAXXDIM, MAXYDIM);
+		return 0;
 	}
 	else{
-		//printf("No Blob found\n");
-		//printf("Press key to continue\n");
-		//getch_(0);
+		return 1;
 	}
 }
 
 
+int solveQuadricFunction(float a, float b, float c,float *n1, float *n2){
 
-Momente widerstandsmomente(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned char bloblabel){
-	// Widerstandsmoment I_x: Summe(x^2*dA)
-	Momente m;
-	//memset(&m,0,sizeof(Momente));
-	m.Ix = m.Iy = m.Ixy = 0;
-	//double Ix = 0, Iy = 0, Ixy = 0;
-	long int tmp = 0;
-	for(int x = s.boundary_box.x1; x <= s.boundary_box.x2; x++){
-		for(int y = s.boundary_box.y1; y <= s.boundary_box.y2; y++){
-			// dA ist immer 1, da ein Pixel ein dA darstellt
-			if((unsigned int)img[y][x] == bloblabel){
-				// Schwerpunkt ist der Bezugspunkt
-				// Abstand zum schwerpunkt y
-
-				//tmp = ((x*10 + 5) -  (s->boundary_box->x1*10));
-				tmp = ((int)s.x - x);
-				tmp *= tmp;
-				////printf("tmp %ld\n", tmp);
-				m.Ix += tmp;
-				//tmp = ((y*10 + 5) -  (s->boundary_box->y1*10));
-				tmp = ((int)s.y - y);
-				m.Iy += (tmp * tmp);
-				//m.Ixy += (((x*10) + 5) -  (s->boundary_box->x1*10)) * (((y*10) + 0.5) -  (s->boundary_box->y1*10));
-				m.Ixy += ((int)s.x - x) * ((int)s.y - y);
-			}
-		}
+	float d;
+	d = b * b - 4 * a * c;
+	if(d < 0){
+	// komplexe zahl- wurzel aus negativer zahl....
+	//printf("%.3f%+.3fi",-b/(2*a),sqrt(-d)/(2*a));
+	//printf(", %.3f%+.3fi",-b/(2*a),-sqrt(-d)/(2*a));
+	return -1;
 	}
-	m.Ixy *= -1;
-	return m;
-}
-
-double orientierung(Momente m){
-	// Drehung der Hauptachsen tan(2a)=(2*Ixy)/(Iy-Ix)
-	double x = ((double)m.Ixy*2)/(((double)m.Iy) - ((double)m.Ix));
-	double erg = atan(x)/2.0;
-	erg *= 180 / M_PI;
-	return erg;
-}
-
-void zeige_rotation(unsigned char img[MAXYDIM][MAXXDIM], unsigned char bloblabel){
-	Schwerpunkt s = schwerpunkt(img, bloblabel);
-	//printf("Schwerpunkt x/y: %u %u \n", s.x, s.y);
-	Momente m = widerstandsmomente(img, s, bloblabel);
-	double r = orientierung(m);
-	//printf("Orientierung: ----------------\n");
-	//printf("Ix %li\n",m.Ix);
-	//printf("Iy %li\n",m.Iy);
-	//printf("Ixy %li°\n",m.Ixy);
-	//printf("Orientierung des Körpers %2.3lf°\n",r);
-
-	double w = winkel_rechteck(img, s, bloblabel);
-	//printf("Winkel: ----------------------\n");
-	//printf("Winkel des Körpers %2.3lf°\n",w);
-	//printf("Press key...\n");
-	////writeImage_ppm(img,MAXXDIM, MAXYDIM);
-	//getch_(0);
-}
-
-double winkel_rechteck(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned int bloblabel){
-	if(s.x == 0 || s.y == 0)
-		return -100;
-	unsigned int sy = 0, sx = 0;
-	// Schauen o
-	if((s.boundary_box.y2 - s.boundary_box.y1) < 25 )
-		return -101;
-	if((s.boundary_box.x2 - s.boundary_box.x1) < 25 )
-		return -102;
-
-	//printf("winkel bloblabel %u\n", bloblabel);
-	// Suche in der Boundary Box in y-Richtung nach Schnittpunkt
-	for(int y = s.boundary_box.y1; y < s.boundary_box.y2; y++){
-		if(img[y][s.boundary_box.x1] == bloblabel){
-			sy = y;
-			break;
-		}
+	else if(d==0){
+		// doppelte nullstelle
+		*n1 = *n2 = -b /(2* a);
+		return 0;
 	}
-	// Suche in der Boundary Box in x-Richtung nach Schnittpunkten
-	for(int x = s.boundary_box.x1; x < s.boundary_box.x2; x++){
-		if(img[s.boundary_box.y1][x] == bloblabel){
-			sx = x;
-			break;
-		}
-	}
-	if( sy == 0 || sx == 0)
-		return -101;
-//y1   B
-// 	|''''/
-// 	|   /
-// A|  /  C
-// 	| /
-// 	|/
-//sy
-// 	alpha= arctan(B/A)
-//
-	// A > B : Von oben nach unten iterieren
-	unsigned int a = 0, b = 0, count = 0;
-	double alpha = 0, beta = 0, tmp = 0;
-	unsigned  int dy = (sy - s.boundary_box.y1) ;
-	unsigned  int dx = (sx - s.boundary_box.x1) ;
-	//printf("x1 %u y1 %u\n", s.boundary_box.x1,s.boundary_box.y1);
-	//printf("x2 %u y2 %u\n", s.boundary_box.x2,s.boundary_box.y2);
-	//printf("sx %u sy %u\n", sx, sy);
-	//printf("dx %u dy %u\n", dx, dy);
-	if(dy > dx){
-		unsigned int y_end = sy - ((sy - s.boundary_box.y1) / 2);
-		for(unsigned int y = s.boundary_box.y1; y < y_end; y++){
-			for(unsigned int x = s.boundary_box.x1; x <= s.boundary_box.x2; x++){
-				if(img[y][x] == bloblabel){
-					a = sy - y;
-					b = x - s.boundary_box.x1;
-					if(a == 0)
-						break;
-					tmp = atan(((double)b/(double)a));
-					//printf("a=%3u b=%3u w=%lf\n",a, b,(tmp* 180 / M_PI));
-					alpha += tmp;
-					count++;
-					break;
-				}
-				img[y][x] = 127;
-			}
-			////printf("y++ %u\n",y);
-		}
-		alpha /= (double)count; // IC nach links drehen
-		alpha *= 180 / M_PI;
-		return alpha;
-
-	}
-	// B > A : von links nach rechts iterieren
 	else{
-		unsigned int x_end = sx - ((sx - s.boundary_box.x1) / 2);
-		//printf("x_end %u\n", x_end);
-		for(unsigned int x = s.boundary_box.x1; x < x_end; x++){
-			for(unsigned int y = s.boundary_box.y1; y < s.boundary_box.y2; y++){
-				////printf("x%u y%u\n", x,y);
-				if(img[y][x] == bloblabel){
-					b = sx - x;
-					a = y - s.boundary_box.y1;
-					if(a == 0)
-						break;
-					tmp = atan(((double)b/(double)a));
-					//printf("a=%3u b=%3u w=%lf\n",a, b,90.0 - (tmp* 180 / M_PI));
-					alpha += tmp;
-					count++;
-					break;
-				}
-				img[y][x] = 127;
-			}
-		}
-		alpha /= (double)count; // IC nach links drehen
-		alpha *= 180 / M_PI;
-		alpha -= 90.0;
-		return alpha;
+		// zwei nullstellen
+		*n1 = ( -b + sqrt(d)) / (2* a);
+		*n2 = ( -b - sqrt(d)) / (2* a);
+		return 0;
 	}
 }
+/*
+ * principal componente analysis
+ * breaks down the pixel matrix to a 2x2 covariance matrix
+ * out of this matrix, the eigenvalues and eigenvectors are calculated
+ * with the vector the orientation of the blob is calculated
+ */
+int blobOrientationPCA(unsigned char img[MAXYDIM][MAXXDIM], Blob *blob){
+	// evtl dynamisch allozieren um speicher zu sparen
+	int iaverage_x = 0, iaverage_y = 0;
+	int x, y;
+	unsigned int cnt = 0;
+	float fvar_x = 0, fvar_y = 0, fvar_xy = 0, ftmp1, ftmp2;
+	float faverage_x = 0, faverage_y = 0;
+	float alpha;
+
+	for(x = blob->b.x1; x <= blob->b.x2; x++){
+		for(y = blob->b.y1; y <= blob->b.y2; y++){
+			if(img[y][x] == blob->blob_label){
+				iaverage_x += x;
+				iaverage_y += y;
+				cnt++;
+			}
+		}
+	}
+
+	// Durchschnitt errechnen, auf 0,5 px genau
+	faverage_x = (float)(iaverage_x / cnt);
+	faverage_y = (float)(iaverage_y / cnt);
+
+
+	// calculate variance xx, yy and xy/yx
+	for(x = blob->b.x1; x <= blob->b.x2; x++){
+		for(y = blob->b.y1; y <= blob->b.y2; y++){
+			if(img[y][x] == blob->blob_label){
+				ftmp1 = ((float)x - faverage_x);
+				fvar_x += ftmp1 * ftmp1;
+				ftmp2 = ((float)y - faverage_y);
+				fvar_y += ftmp2 * ftmp2;
+				fvar_xy += ftmp1*ftmp2;
+			}
+		}
+	}
+	fvar_x /= (cnt - 1);
+	fvar_y /= (cnt - 1);
+	fvar_xy/= (cnt - 1);
+
+
+	if((fvar_x - fvar_y) != 0.0)
+		blob->o = 0.5 * atan((2*fvar_xy)/(fvar_x - fvar_y));
+	else
+		blob->o = 0;
+	blob->o_deg = blob->o *180 /M_PI;
+
+	// die anderen wer
+	return 0;
+
+	// quadric function to solve eigenvalues: 0 = ax²+bx+c
+	// det(a) = | (cov(xx) - l) cov(xy)      |
+	//          |  cov(xy)     (cov(yy) - l) |
+	// al²+bl+c = l² - (cov(xx) + cov(yy))*l + (cov(xx)*cov(yy)) - (cov(xy)*cov(xy))
+
+	float a = 1.0;
+	float b = -(fvar_x + fvar_y);
+	float c = (fvar_x*fvar_y) - (fvar_xy*fvar_xy);
+	float d = 0;
+	float n1 = 0;	// eigenwert 1
+	float n2 = 0;	// eigenwert 2
+	if(solveQuadricFunction(a,b,c, &n1, &n2))
+		return -1;	// quadratische funktion ergibt keine 2 lösungen
+
+	a = fvar_x;
+	b = fvar_xy;
+	c = fvar_xy;
+	d = fvar_y;
+
+	// | a  b |  d*k=b => k=b/d   ->  | a  b | -II -> | a-ck  0  |
+	// | c  d |                       | ck dk|        | ck    bk |
+	//
+	// (lambda*E -A)*x=0
+	// | n1-a      b    | * |x| = |0|
+	// | c         n1-d |   |y|   |0|
+	//
+	// y = ((n1-a)/b)*x  = (c/(n1-d))*x
+	// v = {b, n1-a}, {n1-d,c}
+	blob->v1.x = b;
+	blob->v1.y = n1 - a;
+	blob->v1.eigenval = n1;
+	blob->v2.x = n2 - d;
+	blob->v2.y = c;
+	blob->v2.eigenval = n2;
+
+	float tmp = sqrt((blob->v1.x*blob->v1.x)+(blob->v1.y*blob->v1.y));
+	float tmp_x = blob->v1.x<0? -blob->v1.x : blob->v1.x;
+	float tmp_y = blob->v1.y<0? -blob->v1.y : blob->v1.y;
+	blob->v1.alpha =  blob->v1.x/tmp; //tmp_x/tmp;
+	blob->v1.alpha = acos(blob->v1.alpha);
+	blob->v1.alpha_deg = blob->v1.alpha*180/M_PI;
+
+	blob->v1.beta = blob->v1.y/tmp;//tmp_y/tmp;
+	blob->v1.beta = acos(blob->v1.beta);
+	blob->v1.beta_deg = blob->v1.beta*180/M_PI;
+
+	tmp = sqrt((blob->v2.x*blob->v2.x)+(blob->v2.y*blob->v2.y));
+	tmp_x = blob->v2.x<0? -blob->v2.x : blob->v2.x;
+	tmp_y = blob->v2.y<0? -blob->v2.y : blob->v2.y;
+	blob->v2.alpha = blob->v2.x/tmp;//tmp_x/tmp;
+	blob->v2.alpha = acos(blob->v2.alpha);
+	blob->v2.alpha_deg = blob->v2.alpha*180/M_PI;
+
+	blob->v2.beta = blob->v2.y/tmp;//tmp_y/tmp;
+	blob->v2.beta = acos(blob->v2.beta);
+	blob->v2.beta_deg = blob->v2.beta*180/M_PI;
+
+	return 0;
+}
+
+
+void show_orientation(unsigned char img[MAXYDIM][MAXXDIM], Blob *blob, unsigned char draw_label){
+	// Linie errechnen, die der rotation der Eigenvektoren entsprechen
+	int a ,b,a2,b2, x0,y0,x1,y1;
+	int xl = (blob->b.x2 - blob->b.x1)/2;
+	int yl = (blob->b.y2 - blob->b.y1)/2;
+	int radius = xl < yl ? xl : yl;
+
+	drawCircle(img, (uint16_t)blob->s.x, (uint16_t)blob->s.y,(uint8_t)radius, draw_label);
+
+	a = (int)(sin(blob->o)*(float)radius);	// delta y
+	// cos(alpha)=b/c
+	b = (int)(cos(blob->o)*(float)radius);	// delta x
+
+	a2 = (int)(sin((M_PI/2)-blob->o)*(float)radius);	// delta y
+	b2 = (int)(cos((M_PI/2)-blob->o)*(float)radius);
+
+	if(blob->o > 0){
+		x0 = blob->s.x - b;
+		y0 = blob->s.y - a;
+		x1 = blob->s.x + b;
+		y1 = blob->s.y + a;
+	}else{
+		x0 = blob->s.x + b;
+		y0 = blob->s.y + a;
+		x1 = blob->s.x - b;
+		y1 = blob->s.y - a;
+	}
+	drawLine(img,x0,y0,x1,y1,draw_label);
+
+	if(blob->o > 0){
+		x0 = blob->s.x - b2;
+		y0 = blob->s.y + a2;
+		x1 = blob->s.x + b2;
+		y1 = blob->s.y - a2;
+	}else{
+		x0 = blob->s.x + b2;
+		y0 = blob->s.y - a2;
+		x1 = blob->s.x - b2;
+		y1 = blob->s.y + a2;
+	}
+	drawLine(img,x0,y0,x1,y1,draw_label);
+	char buf[21];
+	int vk = (int)blob->o_deg;
+	int nk = (int)((blob->o_deg - (float)vk)*1000);
+	nk = nk < 0 ? -nk : nk;
+	nk/=100;
+	sprintf(buf, "%i.%i*", vk, nk);
+	writeString(img,1, MAXYDIM - Font_7x10.height- 1,&buf,Font_7x10 );
+
+	return;
+}
+
+
+/**
+ * @brief Draw a line with single color
+ * @param x1&y1 -> coordinate of the start point
+ * @param x2&y2 -> coordinate of the end point
+ * @param color -> color of the line to Draw
+ * @return none
+ */
+void drawLine(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, unsigned char greyval) {
+	uint16_t swap;
+    uint16_t steep; 	// = ABS(y1 - y0) > ABS(x1 - x0);
+    uint16_t a = y1 - y0;
+    uint16_t b = x1 - x0;
+    a = a < 0 ? -a : a;
+    b = b < 0 ? -b : b;
+    steep = a > b;
+
+    if (steep) {
+		swap = x0;
+		x0 = y0;
+		y0 = swap;
+		swap = x1;
+		x1 = y1;
+		y1 = swap;
+        //_swap_int16_t(x0, y0);
+        //_swap_int16_t(x1, y1);
+    }
+    if (x0 > x1) {
+		swap = x0;
+		x0 = x1;
+		x1 = swap;
+		swap = y0;
+		y0 = y1;
+		y1 = swap;
+        //_swap_int16_t(x0, x1);
+        //_swap_int16_t(y0, y1);
+    }
+
+    int16_t dx, dy;
+    dx = x1 - x0;
+    dy = y1 - y0;
+    dy = dy < 0? -dy:dy;
+    //dy = ABS(y1 - y0);
+    int16_t err = dx / 2;
+    int16_t ystep;
+    if (y0 < y1) {
+        ystep = 1;
+    } else {
+        ystep = -1;
+    }
+    for (; x0<=x1; x0++) {
+        if (steep) {
+        	img[x0][y0] = greyval;
+            //ST7789_DrawPixel(y0, x0, color);
+        } else {
+        	img[y0][x0] = greyval;
+            //ST7789_DrawPixel(x0, y0, color);
+        }
+        err -= dy;
+        if (err < 0) {
+            y0 += ystep;
+            err += dx;
+        }
+    }
+}
+
+
+/**
+ * @brief Draw a circle with single color
+ * @param x0&y0 -> coordinate of circle center
+ * @param r -> radius of circle
+ * @param color -> color of circle line
+ * @return  none
+ */
+void drawCircle(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x0, uint16_t y0, uint8_t r, unsigned char  greyval)
+{
+	int16_t f = 1 - r;
+	int16_t ddF_x = 1;
+	int16_t ddF_y = -2 * r;
+	int16_t x = 0;
+	int16_t y = r;
+	if( (x0-r) < 0 || 0 > (y0-r))
+		return;
+
+	if( (x0+r) > MAXXDIM || MAXYDIM < (y0+r))
+		return;
+
+	img[y0+r][x0] = greyval;
+	img[y0-r][x0] = greyval;
+	img[y0][x0+r] = greyval;
+	img[y0-r][x0] = greyval;
+
+	while (x < y) {
+		if (f >= 0) {
+			y--;
+			ddF_y += 2;
+			f += ddF_y;
+		}
+		x++;
+		ddF_x += 2;
+		f += ddF_x;
+
+		img[y0 + y][x0 + x] = greyval;
+		img[y0 + y][x0 - x] = greyval;
+		img[y0 - y][x0 + x] = greyval;
+		img[y0 - y][x0 - x] = greyval;
+
+		img[y0 + x][x0 + y] = greyval;
+		img[y0 + x][x0 - y] = greyval;
+		img[y0 - x][x0 + y] = greyval;
+		img[y0 - x][x0 - y] = greyval;
+	}
+}
+
+
+/**
+ * @brief Write a char
+ * @param  x&y -> cursor of the start point.
+ * @param ch -> char to write
+ * @param font -> fontstyle of the string
+ * @param color -> color of the char
+ * @param bgcolor -> background color of the char
+ * @return  none
+ */
+void writeChar(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x0, uint16_t y0, char ch, FontDef font)
+{
+	uint32_t b, x, y, y_n, x_n;
+	for (y = y0, y_n = 0; y < y0 + font.height; y++, y_n++) {
+		b = font.data[(ch - 32) * font.height + y_n];
+		for (x = x0, x_n = 0; x < x0 + font.width; x++, x_n++) {
+			if ((b << x_n) & 0x8000) {
+				img[y][x] = 255;
+			}
+			else {
+				img[y][x] = 0;
+			}
+		}
+	}
+}
+
+/**
+ * @brief Write a string
+ * @param  x&y -> cursor of the start point.
+ * @param str -> string to write
+ * @param font -> fontstyle of the string
+ * @param color -> color of the string
+ * @param bgcolor -> background color of the string
+ * @return  none
+ */
+void writeString(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x, uint16_t y, const char *str, FontDef font)
+{
+	while (*str) {
+		if (x + font.width >= MAXXDIM) {
+			x = 0;
+			y += font.height;
+			if (y + font.height >= MAXYDIM) {
+				break;
+			}
+			if (*str == ' ') {
+				// skip spaces in the beginning of the new line
+				str++;
+				continue;
+			}
+		}
+		writeChar(img, x, y, *str, font);
+		x += font.width;
+		str++;
+	}
+}
+
+
 
 
 

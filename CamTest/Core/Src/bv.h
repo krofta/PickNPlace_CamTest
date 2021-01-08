@@ -1,6 +1,7 @@
 
 
 #include "globals.h"
+#include "fonts.h"
 
 
 #define LAPLACE_4 4
@@ -20,20 +21,48 @@ typedef struct {
 	unsigned int y1;
 	unsigned int x2;
 	unsigned int y2;
-} Box;
+} BoundaryBox;
 
 typedef struct {
-	unsigned int x;	// Schwerpunkt x
-	unsigned int y;	// Schwerpunkt y
-	unsigned int A;	// Fläche
-	Box boundary_box;	// Boundary Box des Objektes
+	float fx;	// Schwerpunkt x
+	float fy;	// Schwerpunkt y
+	int x;
+	int y;
+	//Box boundary_box;	// Boundary Box des Objektes
 } Schwerpunkt;
 
 typedef struct{
-	long int Ix;	// Widerstandsmoment in x Richtung
-	long int Iy;	// Widerstandsmoment in y Richtung
-	long int Ixy;	// Deviationsmoment in xy Richtung
+	double fIx;	// axiales Flächenmoment in x Richtung
+	double fIy;	// axiales Flächenmoment in y Richtung
+	double fIxy;	// biaxiales Flächenmoment in xy Richtung
+
+	double orientation;	// drehung der Hauptachsen radiant
+	double orientation_deg;	// drehung der Hauptachsen degrees
 } Momente;
+
+typedef struct{
+	float x;
+	float y;
+	float eigenval;	// eigenwert
+    float alpha;	// angle from x-axis to vector
+    float alpha_deg;
+    float beta;		// angle from y-axis to vector
+    float beta_deg;
+}Vertex;
+
+
+typedef struct {
+     unsigned int blob_label;
+ 	 unsigned int A;	// Fläche
+     Momente m;
+     BoundaryBox b;
+     Schwerpunkt s;
+     Vertex v1;	// Eigenvektor 1
+     Vertex v2; // Eigenvektor 2
+     float o; 	// Orientation in rad
+     float o_deg;	// orientation in deg;
+} Blob;
+
 
 typedef struct{
 	unsigned int biggestBlobPxCount;
@@ -90,16 +119,20 @@ int bwLabelDeleteSmallBlobs(uint16_t label[MAXYDIM][MAXXDIM], int minBlobSize, B
 int bwLabelJoinBlobs(uint16_t label[MAXYDIM][MAXXDIM], BlobColoring *ColInfo);
 void labelMatrixToImage(uint16_t label[MAXYDIM][MAXXDIM], unsigned char img[MAXYDIM][MAXXDIM],BlobColoring *ColInfo);
 
-
-
-
 // Merkmalsextraktion
-void zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned char bloblabel);
-Schwerpunkt schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],unsigned char bloblabel);
-Momente widerstandsmomente(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned char bloblabel);
-void zeige_rotation(unsigned char img[MAXYDIM][MAXXDIM], unsigned char bloblabel);
-double orientierung(Momente m);
-double winkel_rechteck(unsigned char img[MAXYDIM][MAXXDIM],Schwerpunkt s, unsigned int bloblabel);
+int zeige_schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM],Blob *blob, unsigned char drawlabel);
+int schwerpunkt(unsigned char img[MAXYDIM][MAXXDIM], Blob *s);
+//int widerstandsmomente(unsigned char img[MAXXDIM][MAXYDIM],Blob *b);
+int zeige_rotation(unsigned char img[MAXYDIM][MAXXDIM], Blob *blob);
+//int blobOrientationMoments(Blob *blob);
+int blobOrientationPCA(unsigned char img[MAXYDIM][MAXXDIM], Blob *blob);
+
+// Annotation Functions
+void show_orientation(unsigned char img[MAXYDIM][MAXXDIM], Blob *blob, unsigned char label);
+void drawLine(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, unsigned char greyval) ;
+void drawCircle(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x0, uint16_t y0, uint8_t r, unsigned char  greyval);
+void writeChar(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x0, uint16_t y0, char ch, FontDef font);
+void writeString(unsigned char img[MAXYDIM][MAXXDIM], uint16_t x, uint16_t y, const char *str, FontDef font);
 
 // Anderes
 void frambuffer_test(unsigned char cMatrix[MAXYDIM][MAXXDIM]);
