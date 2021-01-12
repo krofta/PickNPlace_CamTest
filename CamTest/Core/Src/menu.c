@@ -77,7 +77,7 @@ char *main_menu_opts[OPTS_MAIN_MENU] = {
 Blob blob;
 
 void capture_image(int manu){
-	led_fill(20,20,20);
+	led_fill(70,70,70);
 	led_show();
 
 	HAL_Delay(10);
