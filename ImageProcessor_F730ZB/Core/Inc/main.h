@@ -60,6 +60,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define ADDR0_Pin GPIO_PIN_12
+#define ADDR0_GPIO_Port GPIOB
+#define ADDR1_Pin GPIO_PIN_11
+#define ADDR1_GPIO_Port GPIOD
+#define ADDR2_Pin GPIO_PIN_12
+#define ADDR2_GPIO_Port GPIOD
+#define ADDR3_Pin GPIO_PIN_13
+#define ADDR3_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
