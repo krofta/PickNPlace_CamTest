@@ -50,6 +50,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -58,8 +60,32 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define USB_VBUS_EN_Pin GPIO_PIN_10
-#define USB_VBUS_EN_GPIO_Port GPIOA
+#define DIR_A_Pin GPIO_PIN_5
+#define DIR_A_GPIO_Port GPIOA
+#define DIR_B_Pin GPIO_PIN_4
+#define DIR_B_GPIO_Port GPIOC
+#define MODE_Pin GPIO_PIN_5
+#define MODE_GPIO_Port GPIOC
+#define ADDR7_Pin GPIO_PIN_12
+#define ADDR7_GPIO_Port GPIOB
+#define ADDR6_Pin GPIO_PIN_13
+#define ADDR6_GPIO_Port GPIOB
+#define ADDR5_Pin GPIO_PIN_14
+#define ADDR5_GPIO_Port GPIOB
+#define ADDR4_Pin GPIO_PIN_15
+#define ADDR4_GPIO_Port GPIOB
+#define ADDR3_Pin GPIO_PIN_6
+#define ADDR3_GPIO_Port GPIOC
+#define ADDR2_Pin GPIO_PIN_7
+#define ADDR2_GPIO_Port GPIOC
+#define ADDR1_Pin GPIO_PIN_8
+#define ADDR1_GPIO_Port GPIOC
+#define ADDR0_Pin GPIO_PIN_9
+#define ADDR0_GPIO_Port GPIOC
+#define LED_Error_Pin GPIO_PIN_15
+#define LED_Error_GPIO_Port GPIOA
+#define LED_Status_Pin GPIO_PIN_10
+#define LED_Status_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
