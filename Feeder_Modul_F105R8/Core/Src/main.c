@@ -311,20 +311,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, DIR_A_Pin|GPIO_PIN_10|LED_Error_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, DIR_A_Pin|GPIO_PIN_10, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, DIR_B_Pin|MODE_Pin|LED_Status_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, DIR_B_Pin|MODE_Pin|LED_Error_Pin|LED_Status_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : DIR_A_Pin PA10 LED_Error_Pin */
-  GPIO_InitStruct.Pin = DIR_A_Pin|GPIO_PIN_10|LED_Error_Pin;
+  /*Configure GPIO pins : DIR_A_Pin PA10 */
+  GPIO_InitStruct.Pin = DIR_A_Pin|GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DIR_B_Pin MODE_Pin LED_Status_Pin */
-  GPIO_InitStruct.Pin = DIR_B_Pin|MODE_Pin|LED_Status_Pin;
+  /*Configure GPIO pins : DIR_B_Pin MODE_Pin LED_Error_Pin LED_Status_Pin */
+  GPIO_InitStruct.Pin = DIR_B_Pin|MODE_Pin|LED_Error_Pin|LED_Status_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -341,6 +341,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : TAPE_MICROBTN_Pin */
+  GPIO_InitStruct.Pin = TAPE_MICROBTN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(TAPE_MICROBTN_GPIO_Port, &GPIO_InitStruct);
 
 }
 

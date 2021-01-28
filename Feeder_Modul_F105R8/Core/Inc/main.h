@@ -82,9 +82,11 @@ void Error_Handler(void);
 #define ADDR1_GPIO_Port GPIOC
 #define ADDR0_Pin GPIO_PIN_9
 #define ADDR0_GPIO_Port GPIOC
-#define LED_Error_Pin GPIO_PIN_15
-#define LED_Error_GPIO_Port GPIOA
-#define LED_Status_Pin GPIO_PIN_10
+#define TAPE_MICROBTN_Pin GPIO_PIN_15
+#define TAPE_MICROBTN_GPIO_Port GPIOA
+#define LED_Error_Pin GPIO_PIN_10
+#define LED_Error_GPIO_Port GPIOC
+#define LED_Status_Pin GPIO_PIN_11
 #define LED_Status_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 
