@@ -122,7 +122,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
-  MX_CAN2_Init();
+  //MX_CAN2_Init();
   MX_I2C1_Init();
   MX_SDIO_SD_Init();
   MX_SPI1_Init();
@@ -146,6 +146,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	  HAL_GPIO_TogglePin(LED_Status_GPIO_Port, LED_Status_Pin);
+	  HAL_Delay(500);
 
     /* USER CODE BEGIN 3 */
   }
@@ -910,7 +912,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, EN_ROT_Pin|DIR_ROT_Pin|SPI_DC_Pin|SPI_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SPI_RESET_Pin|OUTPUT_RES6_Pin|OUTPUT_RES5_Pin|OUTPUT_RES4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SPI_RESET_Pin|LED_Status_Pin|OUTPUT_RES6_Pin|OUTPUT_RES5_Pin
+                          |OUTPUT_RES4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, OUTPUT_RES7_Pin|OUTPUT_RES3_Pin|OUTPUT_RES2_Pin, GPIO_PIN_RESET);
@@ -949,8 +952,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPI_RESET_Pin OUTPUT_RES6_Pin OUTPUT_RES5_Pin OUTPUT_RES4_Pin */
-  GPIO_InitStruct.Pin = SPI_RESET_Pin|OUTPUT_RES6_Pin|OUTPUT_RES5_Pin|OUTPUT_RES4_Pin;
+  /*Configure GPIO pins : SPI_RESET_Pin LED_Status_Pin OUTPUT_RES6_Pin OUTPUT_RES5_Pin
+                           OUTPUT_RES4_Pin */
+  GPIO_InitStruct.Pin = SPI_RESET_Pin|LED_Status_Pin|OUTPUT_RES6_Pin|OUTPUT_RES5_Pin
+                          |OUTPUT_RES4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
