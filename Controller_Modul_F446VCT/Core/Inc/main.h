@@ -74,8 +74,8 @@ void Error_Handler(void);
 #define ENDSTOP_X2_GPIO_Port GPIOC
 #define ENDSTOP_Y1_Pin GPIO_PIN_14
 #define ENDSTOP_Y1_GPIO_Port GPIOC
-#define ENSTOP_Y2_Pin GPIO_PIN_15
-#define ENSTOP_Y2_GPIO_Port GPIOC
+#define ENDSTOP_Y2_Pin GPIO_PIN_15
+#define ENDSTOP_Y2_GPIO_Port GPIOC
 #define EN_ROT_Pin GPIO_PIN_0
 #define EN_ROT_GPIO_Port GPIOC
 #define DIAG_ROT_Pin GPIO_PIN_1

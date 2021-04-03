@@ -62,8 +62,8 @@ all: main-build
 main-build: Controller_Modul_F446VCT.elf secondary-outputs
 
 # Tool invocations
-Controller_Modul_F446VCT.elf: $(OBJS) $(USER_OBJS) /home/nk/ExpectoPatronum/Pick_n_Place/01_Software/STM/Controller_Modul_F446VCT/STM32F446VCTX_FLASH.ld
-	arm-none-eabi-gcc -o "Controller_Modul_F446VCT.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/nk/ExpectoPatronum/Pick_n_Place/01_Software/STM/Controller_Modul_F446VCT/STM32F446VCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Controller_Modul_F446VCT.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Controller_Modul_F446VCT.elf: $(OBJS) $(USER_OBJS) /home/niko/Dokumente/Pick_n_Place/01_Software/STM_Firmware/Controller_Modul_F446VCT/STM32F446VCTX_FLASH.ld
+	arm-none-eabi-gcc -o "Controller_Modul_F446VCT.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/niko/Dokumente/Pick_n_Place/01_Software/STM_Firmware/Controller_Modul_F446VCT/STM32F446VCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Controller_Modul_F446VCT.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

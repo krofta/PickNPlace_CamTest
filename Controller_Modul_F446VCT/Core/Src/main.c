@@ -25,6 +25,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "usbd_cdc_if.h"
+#include "string.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +48,6 @@
 ADC_HandleTypeDef hadc1;
 
 CAN_HandleTypeDef hcan1;
-CAN_HandleTypeDef hcan2;
 
 I2C_HandleTypeDef hi2c1;
 
@@ -60,10 +62,14 @@ TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim9;
+TIM_HandleTypeDef htim14;
 
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
+
+char com_buf[64];
+uint8_t com_bytes_available = 0;
 
 /* USER CODE END PV */
 
@@ -71,7 +77,6 @@ UART_HandleTypeDef huart4;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
-static void MX_CAN2_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SDIO_SD_Init(void);
 static void MX_SPI1_Init(void);
@@ -84,12 +89,17 @@ static void MX_TIM5_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM9_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_TIM14_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+char *data = "Moin von Nikos Pick n Place Maschine\r\n";
+
+
 
 /* USER CODE END 0 */
 
@@ -122,7 +132,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
-  //MX_CAN2_Init();
   MX_I2C1_Init();
   MX_SDIO_SD_Init();
   MX_SPI1_Init();
@@ -137,17 +146,66 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM9_Init();
   MX_ADC1_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  memset(&com_buf,0,sizeof(com_buf));
+  HAL_TIM_Base_Start_IT(&htim14);
+
   while (1)
   {
+	  // test virtual com port
+	  if(com_bytes_available){
+		  com_bytes_available = 0;
+		  if(!strcmp(com_buf,"moin")){
+			  CDC_Transmit_FS((uint8_t*)data, strlen(data));
+		  }
+
+	  }
+
+	  HAL_Delay(100);
+
+
+	  // OUTPUTS test:outputs funktionieren
+	  HAL_GPIO_WritePin(VENTIL1_GPIO_Port, VENTIL1_Pin, 1);
+	  HAL_GPIO_WritePin(VENTIL2_GPIO_Port, VENTIL2_Pin, 1);
+	  HAL_GPIO_WritePin(VACUUM_PUMP_GPIO_Port, VACUUM_PUMP_Pin, 1);
+	  HAL_GPIO_WritePin(OUTPUT_RES1_GPIO_Port, OUTPUT_RES1_Pin, 1);
+	  HAL_GPIO_WritePin(OUTPUT_RES2_GPIO_Port, OUTPUT_RES2_Pin, 1);
+	  HAL_GPIO_WritePin(OUTPUT_RES3_GPIO_Port, OUTPUT_RES3_Pin, 1);
+	  HAL_GPIO_WritePin(OUTPUT_RES4_GPIO_Port, OUTPUT_RES4_Pin, 1);
+	  HAL_GPIO_WritePin(OUTPUT_RES5_GPIO_Port, OUTPUT_RES5_Pin, 1);
+	  HAL_GPIO_WritePin(OUTPUT_RES6_GPIO_Port, OUTPUT_RES6_Pin, 1);
+	  HAL_GPIO_WritePin(OUTPUT_RES7_GPIO_Port, OUTPUT_RES7_Pin, 1);
+
+	  // TEST inputs: inputs funktionieren
+	  int input = 0;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_X1_GPIO_Port, ENDSTOP_X1_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_X2_GPIO_Port, ENDSTOP_X2_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_Y1_GPIO_Port, ENDSTOP_Y1_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_Y2_GPIO_Port, ENDSTOP_Y2_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_Z1_GPIO_Port, ENDSTOP_Z1_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_Z2_GPIO_Port, ENDSTOP_Z2_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_ROT1_GPIO_Port, ENDSTOP_ROT1_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(ENDSTOP_ROT2_GPIO_Port, ENDSTOP_ROT2_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(INPUT_RES1_GPIO_Port, INPUT_RES1_Pin))
+		  input++;
+	  if(!HAL_GPIO_ReadPin(INPUT_RES2_GPIO_Port, INPUT_RES2_Pin))
+		  input++;
+	  //HAL_GPIO_WritePin(LED_Status_GPIO_Port, LED_Status_Pin, input > 0);
     /* USER CODE END WHILE */
-	  HAL_GPIO_TogglePin(LED_Status_GPIO_Port, LED_Status_Pin);
-	  HAL_Delay(500);
 
     /* USER CODE BEGIN 3 */
   }
@@ -290,43 +348,6 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
-
-}
-
-/**
-  * @brief CAN2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_CAN2_Init(void)
-{
-
-  /* USER CODE BEGIN CAN2_Init 0 */
-
-  /* USER CODE END CAN2_Init 0 */
-
-  /* USER CODE BEGIN CAN2_Init 1 */
-
-  /* USER CODE END CAN2_Init 1 */
-  hcan2.Instance = CAN2;
-  hcan2.Init.Prescaler = 16;
-  hcan2.Init.Mode = CAN_MODE_NORMAL;
-  hcan2.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan2.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan2.Init.TimeSeg2 = CAN_BS2_1TQ;
-  hcan2.Init.TimeTriggeredMode = DISABLE;
-  hcan2.Init.AutoBusOff = DISABLE;
-  hcan2.Init.AutoWakeUp = DISABLE;
-  hcan2.Init.AutoRetransmission = DISABLE;
-  hcan2.Init.ReceiveFifoLocked = DISABLE;
-  hcan2.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN CAN2_Init 2 */
-
-  /* USER CODE END CAN2_Init 2 */
 
 }
 
@@ -856,6 +877,37 @@ static void MX_TIM9_Init(void)
 }
 
 /**
+  * @brief TIM14 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM14_Init(void)
+{
+
+  /* USER CODE BEGIN TIM14_Init 0 */
+
+  /* USER CODE END TIM14_Init 0 */
+
+  /* USER CODE BEGIN TIM14_Init 1 */
+
+  /* USER CODE END TIM14_Init 1 */
+  htim14.Instance = TIM14;
+  htim14.Init.Prescaler = 8400;
+  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim14.Init.Period = 2000;
+  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM14_Init 2 */
+
+  /* USER CODE END TIM14_Init 2 */
+
+}
+
+/**
   * @brief UART4 Initialization Function
   * @param None
   * @retval None
@@ -937,9 +989,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ENDSTOP_X2_Pin ENDSTOP_Y1_Pin ENSTOP_Y2_Pin DIAG_ROT_Pin
+  /*Configure GPIO pins : ENDSTOP_X2_Pin ENDSTOP_Y1_Pin ENDSTOP_Y2_Pin DIAG_ROT_Pin
                            INDEX_ROT_Pin ENC_BTN_Pin INPUT_RES2_Pin */
-  GPIO_InitStruct.Pin = ENDSTOP_X2_Pin|ENDSTOP_Y1_Pin|ENSTOP_Y2_Pin|DIAG_ROT_Pin
+  GPIO_InitStruct.Pin = ENDSTOP_X2_Pin|ENDSTOP_Y1_Pin|ENDSTOP_Y2_Pin|DIAG_ROT_Pin
                           |INDEX_ROT_Pin|ENC_BTN_Pin|INPUT_RES2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

@@ -25,6 +25,5 @@ usbd_conf.c:540:20:USBD_LL_SetUSBAddress	24	static
 usbd_conf.c:560:20:USBD_LL_Transmit	32	static
 usbd_conf.c:580:20:USBD_LL_PrepareReceive	32	static
 usbd_conf.c:598:10:USBD_LL_GetRxDataSize	16	static
-usbd_conf.c:609:6:HAL_PCDEx_LPM_Callback	16	static
-usbd_conf.c:644:6:USBD_LL_Delay	16	static
-usbd_conf.c:654:20:USBD_Get_USB_Status	24	static
+usbd_conf.c:608:6:USBD_LL_Delay	16	static
+usbd_conf.c:618:20:USBD_Get_USB_Status	24	static
