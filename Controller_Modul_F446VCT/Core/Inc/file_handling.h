@@ -23,7 +23,7 @@
  * "checkfile " : gives the details of the file
  * "checksd " : get free space of the sd card
  */
-#define BUFFER_SIZE 128
+#define BUFFER_SIZE 64
 #define PATH_SIZE 32
 
 extern char buffer[BUFFER_SIZE];  // to store strings..

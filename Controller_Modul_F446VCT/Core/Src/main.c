@@ -191,55 +191,67 @@ int main(void)
   		  switch (cmd)
   		  {
   		  	  case ('l'):
-  		  			  scan_files(path);
-  		  	  	  	  cmd =0;
-  		  	  	  	  clear_buffer();
-  		  	  	  	  clear_path();
-  		  	  	  	  break;
+				scan_files(path);
+				cmd =0;
+				clear_buffer();
+				clear_path();
+				break;
   			  case ('m'):
-  					  create_dir (path);
-  			  	  	  cmd=0;
-  			  	  	  clear_path();
-  			  	  	  break;
+				CDC_Transmit_FS("enter dir name\n", strlen("enter dir name\n"));
+				while (!com_bytes_available);
+				memcpy(&path,&com_buf, sizeof(path));
+				com_bytes_available = 0;
+				create_dir (path);
+				cmd=0;
+				clear_path();
+				break;
   			  case ('c'):
-  					  create_file(path);
-  			  	  	  cmd = 0;
-  			  	  	  clear_path();
-  			  	  	  break;
+				CDC_Transmit_FS("enter file name\n", strlen("enter file name\n"));
+				while (!com_bytes_available);
+				memcpy(&path,&com_buf, sizeof(path));
+				com_bytes_available = 0;
+				create_file(path);
+				cmd = 0;
+				clear_path();
+				break;
   			  case ('r'):
-  					  read_file (path);
-  			  	  	  cmd = 0;
-  			  	  	  clear_path();
-  			  	  	  break;
+				CDC_Transmit_FS("enter file name\n", strlen("enter file name\n"));
+				while (!com_bytes_available);
+				memcpy(&path,&com_buf, sizeof(path));
+				com_bytes_available = 0;
+				read_file (path);
+				cmd = 0;
+				clear_path();
+				break;
   			  case ('d'):
-  					  remove_file(path);
-  			  	  	  cmd = 0;
-  			  	  	  clear_path();
-  			  	  	  break;
+				remove_file(path);
+				cmd = 0;
+				clear_path();
+				break;
   			  case ('w'):
-  					  write_file (path);
-  			  	  	  cmd = 0;
-  			  	  	  clear_path();
-  			  	  	  break;
+				write_file (path);
+				cmd = 0;
+				clear_path();
+				break;
   			  case ('u'):
-  					  update_file (path);
-  			  	  	  cmd = 0;
-  			  	  	  clear_path();
-  			  	  	  break;
+				update_file (path);
+				cmd = 0;
+				clear_path();
+				break;
   			  case ('f'):
-  					  check_file(path);
-  			  	  	  cmd = 0;
-  			  	  	  clear_path();
-  			  	  	  break;
-  			  case ('s'):
-  					  check_sd();
-  			  	  	  cmd = 0;
-  			  	  	  clear_path();
-  			  	  	  break;
-  			  default :
-  				  clear_buffer();
-  				  clear_path();
-  				  break;
+				check_file(path);
+				cmd = 0;
+				clear_path();
+				break;
+			  case ('s'):
+				check_sd();
+				cmd = 0;
+				clear_path();
+				break;
+			  default :
+				clear_buffer();
+				clear_path();
+				break;
   		  }
 
 	  }

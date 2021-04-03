@@ -10,6 +10,9 @@
 
 //#include "UartRingbuffer.h"
 
+extern uint8_t com_bytes_available;
+extern char com_buf[64];
+
 FATFS fs;  // file system
 FIL fil; // File
 FILINFO fno;
@@ -158,7 +161,9 @@ void write_file (char *name)
 	    	send_uart (buffer);
 	    }
 
-	    while (!(wait_until("\r\n", buffer)));
+	    while (!com_bytes_available);
+	    memcpy(&buffer,&com_buf, sizeof(com_buf));
+	    com_bytes_available = 0;
 
 	    /* Writing text */
 
@@ -379,7 +384,9 @@ void update_file (char *name)
 			    	send_uart (buffer);
 			    }
 
-			    while (!(wait_until("\r\n", buffer)));
+			    while (!com_bytes_available);
+			    memcpy(&buffer,&com_buf, sizeof(com_buf));
+			    com_bytes_available = 0;
 
 			    /* Writing text */
 

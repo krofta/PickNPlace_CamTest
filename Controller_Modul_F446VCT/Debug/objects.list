@@ -1,4 +1,3 @@
-"Core/Src/UartRingbuffer.o"
 "Core/Src/file_handling.o"
 "Core/Src/main.o"
 "Core/Src/stm32f4xx_hal_msp.o"
