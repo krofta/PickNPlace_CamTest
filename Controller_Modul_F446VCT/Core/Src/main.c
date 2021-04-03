@@ -27,6 +27,7 @@
 
 #include "usbd_cdc_if.h"
 #include "string.h"
+#include "file_handling.h"
 
 /* USER CODE END Includes */
 
@@ -153,17 +154,93 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  char cmd = 0;
   memset(&com_buf,0,sizeof(com_buf));
   HAL_TIM_Base_Start_IT(&htim14);
+
+  mount_sd();
 
   while (1)
   {
 	  // test virtual com port
 	  if(com_bytes_available){
 		  com_bytes_available = 0;
+		  /*
 		  if(!strcmp(com_buf,"moin")){
 			  CDC_Transmit_FS((uint8_t*)data, strlen(data));
 		  }
+		  */
+
+
+  		  //Get_string(buffer);
+  		  //int len = cmdlength(buffer);
+		  int len = strlen(com_buf);
+  		  get_path();
+
+  		  if (!(strncmp ("ls", com_buf,len))) cmd = 'l';
+  		  if (!(strncmp ("mkdir", com_buf,len))) cmd = 'm';
+  		  if (!(strncmp ("mkfil", com_buf, len))) cmd = 'c';
+  		  if (!(strncmp ("read", com_buf, len))) cmd = 'r';
+  		  if (!(strncmp ("write", com_buf, len))) cmd = 'w';
+  		  if (!(strncmp ("rm", com_buf, len))) cmd = 'd';
+  		  if (!(strncmp ("update", com_buf, len))) cmd = 'u';
+  		  if (!(strncmp ("checkfile", com_buf, len))) cmd = 'f';
+  		  if (!(strncmp ("checksd", com_buf, len))) cmd = 's';
+
+
+  		  switch (cmd)
+  		  {
+  		  	  case ('l'):
+  		  			  scan_files(path);
+  		  	  	  	  cmd =0;
+  		  	  	  	  clear_buffer();
+  		  	  	  	  clear_path();
+  		  	  	  	  break;
+  			  case ('m'):
+  					  create_dir (path);
+  			  	  	  cmd=0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  case ('c'):
+  					  create_file(path);
+  			  	  	  cmd = 0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  case ('r'):
+  					  read_file (path);
+  			  	  	  cmd = 0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  case ('d'):
+  					  remove_file(path);
+  			  	  	  cmd = 0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  case ('w'):
+  					  write_file (path);
+  			  	  	  cmd = 0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  case ('u'):
+  					  update_file (path);
+  			  	  	  cmd = 0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  case ('f'):
+  					  check_file(path);
+  			  	  	  cmd = 0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  case ('s'):
+  					  check_sd();
+  			  	  	  cmd = 0;
+  			  	  	  clear_path();
+  			  	  	  break;
+  			  default :
+  				  clear_buffer();
+  				  clear_path();
+  				  break;
+  		  }
 
 	  }
 
@@ -406,7 +483,7 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 0;
+  hsd.Init.ClockDiv = 4;
   /* USER CODE BEGIN SDIO_Init 2 */
 
   /* USER CODE END SDIO_Init 2 */
