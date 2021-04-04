@@ -10,3 +10,5 @@ CamTest/Debug/*
 *.bin
 *.elf
 *.map
+*.d
+*.pro.user

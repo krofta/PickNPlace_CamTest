@@ -28,6 +28,7 @@
 #include "usbd_cdc_if.h"
 #include "string.h"
 #include "file_handling.h"
+#include "st7789.h"
 
 /* USER CODE END Includes */
 
@@ -71,6 +72,9 @@ UART_HandleTypeDef huart4;
 
 char com_buf[64];
 uint8_t com_bytes_available = 0;
+
+uint32_t cursorLine = 0;
+uint8_t cursorChanged = 0;
 
 /* USER CODE END PV */
 
@@ -160,9 +164,31 @@ int main(void)
 
   mount_sd();
 
+  //init SPI display ST7789 320x240 px
+  ST7789_Init();
+  // fill displaywith color
+  ST7789_Fill_Color(DARKBLUE);
+  // Backlight of spi display to 50%
+  HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
+
+  // encoder channel start
+  HAL_TIM_Encoder_Start_IT(&htim8, TIM_CHANNEL_ALL);
+
+
+
+
   while (1)
   {
+	  //ST7789_Test();
 	  // test virtual com port
+	  if(cursorChanged){
+		  cursorChanged = 0;
+		  char buf[10];
+		  sprintf(buf,"%3u", cursorLine);
+		  ST7789_WriteString(10, 20, buf, Font_11x18, RED, WHITE);
+
+	  }
+
 	  if(com_bytes_available){
 		  com_bytes_available = 0;
 		  /*
@@ -229,6 +255,10 @@ int main(void)
 				clear_path();
 				break;
   			  case ('w'):
+				CDC_Transmit_FS("enter file name\n", strlen("enter file name\n"));
+				while (!com_bytes_available);
+				memcpy(&path,&com_buf, sizeof(path));
+				com_bytes_available = 0;
 				write_file (path);
 				cmd = 0;
 				clear_path();
@@ -522,7 +552,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_1LINE;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
   hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
@@ -884,19 +914,19 @@ static void MX_TIM8_Init(void)
   htim8.Instance = TIM8;
   htim8.Init.Prescaler = 0;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 65535;
+  htim8.Init.Period = 100;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 7;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 7;
   if (HAL_TIM_Encoder_Init(&htim8, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -932,9 +962,9 @@ static void MX_TIM9_Init(void)
 
   /* USER CODE END TIM9_Init 1 */
   htim9.Instance = TIM9;
-  htim9.Init.Prescaler = 0;
+  htim9.Init.Prescaler = 8400;
   htim9.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim9.Init.Period = 65535;
+  htim9.Init.Period = 20;
   htim9.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim9.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim9) != HAL_OK)
@@ -951,7 +981,7 @@ static void MX_TIM9_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 1000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim9, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -1050,7 +1080,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, EN_Z_Pin|DIR_Z_Pin|GPIO_PIN_10|DIR_X_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, EN_ROT_Pin|DIR_ROT_Pin|SPI_DC_Pin|SPI_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, EN_ROT_Pin|DIR_ROT_Pin|SPI_CS_Pin|SPI_DC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SPI_RESET_Pin|LED_Status_Pin|OUTPUT_RES6_Pin|OUTPUT_RES5_Pin
@@ -1086,8 +1116,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : EN_ROT_Pin DIR_ROT_Pin SPI_DC_Pin SPI_CS_Pin */
-  GPIO_InitStruct.Pin = EN_ROT_Pin|DIR_ROT_Pin|SPI_DC_Pin|SPI_CS_Pin;
+  /*Configure GPIO pins : EN_ROT_Pin DIR_ROT_Pin SPI_CS_Pin SPI_DC_Pin */
+  GPIO_InitStruct.Pin = EN_ROT_Pin|DIR_ROT_Pin|SPI_CS_Pin|SPI_DC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

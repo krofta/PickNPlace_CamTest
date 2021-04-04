@@ -42,7 +42,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+extern uint32_t cursorLine;
+extern uint8_t cursorChanged;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,8 +58,8 @@
 
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+extern SPI_HandleTypeDef hspi1;
 extern TIM_HandleTypeDef htim8;
-extern TIM_HandleTypeDef htim14;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -202,19 +203,42 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles TIM8 trigger and commutation interrupts and TIM14 global interrupt.
+  * @brief This function handles SPI1 global interrupt.
   */
-void TIM8_TRG_COM_TIM14_IRQHandler(void)
+void SPI1_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 0 */
+  /* USER CODE BEGIN SPI1_IRQn 0 */
 
-  /* USER CODE END TIM8_TRG_COM_TIM14_IRQn 0 */
+  /* USER CODE END SPI1_IRQn 0 */
+  HAL_SPI_IRQHandler(&hspi1);
+  /* USER CODE BEGIN SPI1_IRQn 1 */
+
+  /* USER CODE END SPI1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM8 capture compare interrupt.
+  */
+void TIM8_CC_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM8_CC_IRQn 0 */
+
+  /* USER CODE END TIM8_CC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim8);
-  HAL_TIM_IRQHandler(&htim14);
-  /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 1 */
-  HAL_GPIO_TogglePin(LED_Status_GPIO_Port, LED_Status_Pin);
+  /* USER CODE BEGIN TIM8_CC_IRQn 1 */
 
-  /* USER CODE END TIM8_TRG_COM_TIM14_IRQn 1 */
+  cursorChanged = htim8.Instance->CNT != cursorLine ? 1 : 0;
+  if(cursorChanged){
+	  if(htim8.Instance->CNT > cursorLine){
+		  htim8.Instance->CNT = cursorLine == 100 ? 0 : cursorLine + 1;
+	  }
+	  else{
+		  htim8.Instance->CNT = cursorLine == 0 ? 100 : cursorLine - 1;
+	  }
+  }
+  cursorLine = htim8.Instance->CNT;
+
+  /* USER CODE END TIM8_CC_IRQn 1 */
 }
 
 /**

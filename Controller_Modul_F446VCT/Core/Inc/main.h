@@ -90,10 +90,10 @@ void Error_Handler(void);
 #define SPI_RESET_GPIO_Port GPIOA
 #define LED_Status_Pin GPIO_PIN_7
 #define LED_Status_GPIO_Port GPIOA
-#define SPI_DC_Pin GPIO_PIN_4
-#define SPI_DC_GPIO_Port GPIOC
-#define SPI_CS_Pin GPIO_PIN_5
+#define SPI_CS_Pin GPIO_PIN_4
 #define SPI_CS_GPIO_Port GPIOC
+#define SPI_DC_Pin GPIO_PIN_5
+#define SPI_DC_GPIO_Port GPIOC
 #define SDIO_CD_Pin GPIO_PIN_7
 #define SDIO_CD_GPIO_Port GPIOE
 #define TIM1_CH1_Z_Pin GPIO_PIN_9
