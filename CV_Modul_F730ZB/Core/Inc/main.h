@@ -60,6 +60,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define OV7670_PWD_Pin GPIO_PIN_2
+#define OV7670_PWD_GPIO_Port GPIOE
+#define OV7670_RET_Pin GPIO_PIN_3
+#define OV7670_RET_GPIO_Port GPIOE
 #define LED_Status_Pin GPIO_PIN_13
 #define LED_Status_GPIO_Port GPIOC
 #define LED_Error_Pin GPIO_PIN_14
@@ -72,6 +76,12 @@ void Error_Handler(void);
 #define ADDR2_GPIO_Port GPIOD
 #define ADDR3_Pin GPIO_PIN_13
 #define ADDR3_GPIO_Port GPIOD
+#define ST7789_RST_Pin GPIO_PIN_10
+#define ST7789_RST_GPIO_Port GPIOG
+#define ST7789_DC_Pin GPIO_PIN_13
+#define ST7789_DC_GPIO_Port GPIOG
+#define ST7789_CS_Pin GPIO_PIN_14
+#define ST7789_CS_GPIO_Port GPIOG
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
