@@ -58,8 +58,8 @@ all: main-build
 main-build: ImageProcessor_H730ZB.elf secondary-outputs
 
 # Tool invocations
-ImageProcessor_H730ZB.elf: $(OBJS) $(USER_OBJS) /home/niko/Dokumente/Pick_n_Place/01_Software/STM_Firmware/CV_Modul_F730ZB/STM32H730ZBTX_FLASH.ld
-	arm-none-eabi-gcc -o "ImageProcessor_H730ZB.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/niko/Dokumente/Pick_n_Place/01_Software/STM_Firmware/CV_Modul_F730ZB/STM32H730ZBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ImageProcessor_H730ZB.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ImageProcessor_H730ZB.elf: $(OBJS) $(USER_OBJS) /home/nk/ExpectoPatronum/Pick_n_Place/01_Software/STM/CV_Modul_F730ZB/STM32H730ZBTX_FLASH.ld
+	arm-none-eabi-gcc -o "ImageProcessor_H730ZB.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/nk/ExpectoPatronum/Pick_n_Place/01_Software/STM/CV_Modul_F730ZB/STM32H730ZBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ImageProcessor_H730ZB.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

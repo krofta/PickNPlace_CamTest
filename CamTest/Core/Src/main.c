@@ -254,6 +254,7 @@ int main(void)
 			  HAL_Delay(500);
 			  led_fill(0,0,0);
 			  led_show();
+			  HAL_Delay(150);
 			  ST7789_DrawImage(0,0,320,240,framebuffer);
 			  //HAL_Delay(2000);
 /*

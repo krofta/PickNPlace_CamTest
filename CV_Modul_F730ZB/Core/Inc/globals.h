@@ -32,7 +32,7 @@ extern uint8_t pic_captured;
 extern uint8_t pic_written;
 extern uint8_t led_val;
 extern uint8_t led_val_changed;
-extern uint16_t cursorLine;
+extern uint32_t cursorLine;
 extern uint16_t actual_menu;
 // Framebuffer for capuring images and writing the display
 

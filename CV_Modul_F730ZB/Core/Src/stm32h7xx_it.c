@@ -23,6 +23,11 @@
 #include "stm32h7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "ws2812.h"
+#include "st7789.h"
+#include "menu.h"
+#include "globals.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,7 +47,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+extern uint32_t cursorLine;
+extern uint8_t cursorChanged;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,7 +65,9 @@
 extern DMA_HandleTypeDef hdma_dcmi_pssi;
 extern DCMI_HandleTypeDef hdcmi;
 extern SPI_HandleTypeDef hspi1;
-extern DMA_HandleTypeDef hdma_tim3_ch2;
+extern DMA_HandleTypeDef hdma_tim3_ch3;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim8;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -203,6 +211,20 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles EXTI line2 interrupt.
+  */
+void EXTI2_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI2_IRQn 0 */
+
+  /* USER CODE END EXTI2_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+  /* USER CODE BEGIN EXTI2_IRQn 1 */
+  btn_enc = 1;
+  /* USER CODE END EXTI2_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream0 global interrupt.
   */
 void DMA1_Stream0_IRQHandler(void)
@@ -210,24 +232,24 @@ void DMA1_Stream0_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
 
   /* USER CODE END DMA1_Stream0_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_dcmi_pssi);
+  HAL_DMA_IRQHandler(&hdma_tim3_ch3);
   /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
-
+  HAL_TIM_PWM_Stop_DMA(&TIM_HANDLE, TIM_CH);
   /* USER CODE END DMA1_Stream0_IRQn 1 */
 }
 
 /**
-  * @brief This function handles DMA1 stream1 global interrupt.
+  * @brief This function handles TIM3 global interrupt.
   */
-void DMA1_Stream1_IRQHandler(void)
+void TIM3_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+  /* USER CODE BEGIN TIM3_IRQn 0 */
 
-  /* USER CODE END DMA1_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_tim3_ch2);
-  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
+  /* USER CODE END TIM3_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim3);
+  /* USER CODE BEGIN TIM3_IRQn 1 */
 
-  /* USER CODE END DMA1_Stream1_IRQn 1 */
+  /* USER CODE END TIM3_IRQn 1 */
 }
 
 /**
@@ -245,6 +267,61 @@ void SPI1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM8 capture compare interrupt.
+  */
+void TIM8_CC_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM8_CC_IRQn 0 */
+
+  /* USER CODE END TIM8_CC_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim8);
+  /* USER CODE BEGIN TIM8_CC_IRQn 1 */
+
+  int cursorChanged = htim8.Instance->CNT != cursorLine ? 1 : 0;
+  if(cursorChanged){
+	  if(htim8.Instance->CNT > cursorLine){
+		  htim8.Instance->CNT = cursorLine == 100 ? 0 : cursorLine + 1;
+	  }
+	  else{
+		  htim8.Instance->CNT = cursorLine == 0 ? 100 : cursorLine - 1;
+	  }
+  }
+  cursorLine = htim8.Instance->CNT;
+
+
+  switch(actual_menu){
+  case ACT_MENU_MAIN:
+  case ACT_MENU_IMAGE_PROCESSING:
+  case ACT_MENU_PREPROCESSING:
+  case ACT_MENU_EDGE_DETECTION:
+  case ACT_MENU_SEGMENTATION:
+	  cursorLine = htim8.Instance->CNT;
+	  break;
+  case ACT_MENU_LIGHT:
+	  led_val = htim8.Instance->CNT;
+	  led_val_changed = 1;
+	  break;
+  }
+
+  /* USER CODE END TIM8_CC_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA2 stream0 global interrupt.
+  */
+void DMA2_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_dcmi_pssi);
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 1 */
+  HAL_DCMI_Stop(&hdcmi);
+  pic_captured = 1;
+  /* USER CODE END DMA2_Stream0_IRQn 1 */
+}
+
+/**
   * @brief This function handles DCMI and PSSI global interrupt.
   */
 void DCMI_PSSI_IRQHandler(void)
@@ -256,6 +333,23 @@ void DCMI_PSSI_IRQHandler(void)
   /* USER CODE BEGIN DCMI_PSSI_IRQn 1 */
 
   /* USER CODE END DCMI_PSSI_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMAMUX1 overrun interrupt.
+  */
+void DMAMUX1_OVR_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMAMUX1_OVR_IRQn 0 */
+
+  /* USER CODE END DMAMUX1_OVR_IRQn 0 */
+  // Handle DMA2_Stream0
+  HAL_DMAEx_MUX_IRQHandler(&hdma_dcmi_pssi);
+  // Handle DMA1_Stream0
+  HAL_DMAEx_MUX_IRQHandler(&hdma_tim3_ch3);
+  /* USER CODE BEGIN DMAMUX1_OVR_IRQn 1 */
+
+  /* USER CODE END DMAMUX1_OVR_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

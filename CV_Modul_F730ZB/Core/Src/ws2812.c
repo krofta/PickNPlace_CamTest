@@ -11,9 +11,10 @@
 #include "ws2812.h"  // include header file
 //----------------------------------------------------------------------------
 // DMA Buffer
-uint16_t BUF_DMA[ARRAY_LEN] = { 0 };
+
 
 void led_init(void) {	// DMA Buffer initalization (fill strip to black)
+	//*BUF_DMA = (__IO uint16_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR + (320*240 * 2));
 	int i;
 	for (i = DELAY_LEN; i < ARRAY_LEN; i++)
 		BUF_DMA[i] = LOW;
@@ -63,8 +64,12 @@ void led_clear(void) {
 
 // Function to recieve DMA buffer to timer PWM
 void led_show(void) {
-	HAL_TIM_PWM_Start_DMA(&TIM_HANDLE, TIM_CH, (uint32_t*) &BUF_DMA,
-			ARRAY_LEN);
+	//uint16_t *Ptr_Dest = (uint16_t *)&BUF_DMA;
+	//__DSB();
+	SCB_CleanDCache_by_Addr((uint32_t*)(((uint32_t)BUF_DMA) & ~(uint32_t)0x1F), ARRAY_LEN+32);
+
+	HAL_TIM_PWM_Start_DMA(&TIM_HANDLE, TIM_CH, (uint32_t*) &BUF_DMA,ARRAY_LEN);
+	//HAL_TIM_PWM_Start_DMA(&TIM_HANDLE, TIM_CH, (uint32_t*) Ptr_Dest,ARRAY_LEN);
 }
 
 //------------------------------------------------------------------

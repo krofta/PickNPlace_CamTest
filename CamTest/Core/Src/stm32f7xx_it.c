@@ -65,6 +65,7 @@ extern DCMI_HandleTypeDef hdcmi;
 extern DMA_HandleTypeDef hdma_spi2_tx;
 extern SPI_HandleTypeDef hspi2;
 extern DMA_HandleTypeDef hdma_tim3_ch2;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim8;
 /* USER CODE BEGIN EV */
 
@@ -256,6 +257,20 @@ void EXTI9_5_IRQHandler(void)
   //HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
   btn_enc = 1;
   /* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM3 global interrupt.
+  */
+void TIM3_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM3_IRQn 0 */
+
+  /* USER CODE END TIM3_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim3);
+  /* USER CODE BEGIN TIM3_IRQn 1 */
+
+  /* USER CODE END TIM3_IRQn 1 */
 }
 
 /**

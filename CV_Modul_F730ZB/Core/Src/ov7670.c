@@ -81,6 +81,7 @@ RET ov7670_startCap(uint32_t capMode, uint32_t destAddress)
   if (capMode == OV7670_CAP_CONTINUOUS) {
     /* note: continuous mode automatically invokes DCMI, but DMA needs to be invoked manually */
     s_destAddressForContiuousMode = destAddress;
+
     HAL_DCMI_Start_DMA(sp_hdcmi, DCMI_MODE_CONTINUOUS, destAddress, OV7670_QVGA_WIDTH * OV7670_QVGA_HEIGHT/2);
   } else if (capMode == OV7670_CAP_SINGLE_FRAME) {
     s_destAddressForContiuousMode = 0;

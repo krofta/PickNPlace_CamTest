@@ -18,12 +18,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+
 //--------------------------------------------------
 /*USR SETTINGS*/
-#define LED_COUNT 29						// Count of led in your strip (LED_COUNT%12 = 0)
+#define LED_COUNT 11						// Count of led in your strip (LED_COUNT%12 = 0)
 #define BRIGHT 255 							// 0-255
 #define TIM_HANDLE	htim3					// use "htimX", where X is number of ur timer
-#define TIM_CH	TIM_CHANNEL_2				// use "TIM_CHANNEL_X", where X is number of ur channel
+#define TIM_CH	TIM_CHANNEL_3				// use "TIM_CHANNEL_X", where X is number of ur channel
 //--------------------------------------------------
 /*SYS DEFINES*/
 #define DELAY_LEN 50						// Delay period
@@ -53,4 +55,10 @@ void set_led(uint8_t Rpixel , uint8_t Gpixel, uint8_t Bpixel, uint16_t posX);  /
 void led_fill (uint8_t Rpix, uint8_t Gpix, uint8_t Bpix);	// Fill strip with color
 void led_clear(void);	// Fill strip with black
 void led_show(void);	// Recieve DMA Buffer to strip
+
+
+uint16_t BUF_DMA[ARRAY_LEN];// = { 0 };
+//uint16_t *BUF_DMA;
+
+
 #endif /* SRC_WS2812_H_ */

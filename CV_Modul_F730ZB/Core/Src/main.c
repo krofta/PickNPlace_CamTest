@@ -40,6 +40,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+
 #define BEST_LIGHTNING 55
 /* USER CODE END PD */
 
@@ -64,15 +65,21 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim8;
-DMA_HandleTypeDef hdma_tim3_ch2;
+DMA_HandleTypeDef hdma_tim3_ch3;
 
 UART_HandleTypeDef huart4;
 
 SDRAM_HandleTypeDef hsdram1;
 
 /* USER CODE BEGIN PV */
+FMC_SDRAM_CommandTypeDef command;
 
-uint16_t framebuffer[OV7670_QVGA_HEIGHT][OV7670_QVGA_WIDTH  ];
+
+
+uint16_t framebuffer[OV7670_QVGA_HEIGHT][OV7670_QVGA_WIDTH ];
+//WRITE_READ_ADDR
+uint16_t *sdramptr = (__IO uint16_t*) (SDRAM_BANK_ADDR );
+
 unsigned char img[MAXYDIM][MAXXDIM];
 
 uint8_t btn_enc = 0;
@@ -80,6 +87,9 @@ uint8_t pic_captured = 0;
 uint8_t pic_written = 1;
 uint8_t led_val;
 uint8_t led_val_changed = 0;
+
+//uint32_t cursorLine = 0;
+//uint8_t cursorChanged = 0;
 
 /* USER CODE END PV */
 
@@ -98,11 +108,87 @@ static void MX_UART4_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_FDCAN3_Init(void);
 /* USER CODE BEGIN PFP */
+static void SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
+/* Read/Write Buffers */
+uint32_t aTxBuffer[BUFFER_SIZE];
+uint32_t aRxBuffer[BUFFER_SIZE];
+
+/* Status variables */
+__IO uint32_t uwWriteReadStatus = 0;
+/* Counter index */
+uint32_t uwIndex = 0;
+
+static void Fill_Buffer(uint32_t *pBuffer, uint32_t uwBufferLenght, uint32_t uwOffset)
+{
+  uint32_t tmpIndex = 0;
+
+  /* Put in global buffer different values */
+  for (tmpIndex = 0; tmpIndex < uwBufferLenght; tmpIndex++ )
+  {
+    pBuffer[tmpIndex] = tmpIndex + uwOffset;
+  }
+}
+
+
+void SD_RAM_TEST() {
+	  /*##-2- SDRAM memory read/write access #####################################*/
+
+
+
+	  /* Write data to the SDRAM memory */
+	  for(int i = 0; i < 50; i++){
+		  /* Fill the buffer to write */
+		  Fill_Buffer(aTxBuffer, BUFFER_SIZE, 0xA244250F);
+
+		    /* Fill the Read buffer */
+		  Fill_Buffer(aRxBuffer, BUFFER_SIZE, 0xBBBBBBBB);
+		  for (uwIndex = 0; uwIndex < BUFFER_SIZE; uwIndex++)
+		  {
+			*(__IO uint32_t*) (SDRAM_BANK_ADDR + (WRITE_READ_ADDR*i) + 4*uwIndex) = aTxBuffer[uwIndex];
+		  }
+
+		  /* Read back data from the SDRAM memory */
+		  for (uwIndex = 0; uwIndex < BUFFER_SIZE; uwIndex++)
+		  {
+			aRxBuffer[uwIndex] = *(__IO uint32_t*) (SDRAM_BANK_ADDR + (WRITE_READ_ADDR*i) + 4*uwIndex);
+		  }
+
+		  /*##-3- Checking data integrity ############################################*/
+
+		  for (uwIndex = 0; (uwIndex < BUFFER_SIZE) && (uwWriteReadStatus == 0); uwIndex++)
+		  {
+			if (aRxBuffer[uwIndex] != aTxBuffer[uwIndex])
+			{
+			  uwWriteReadStatus++;
+			}
+		  }
+	  }
+
+	  if (uwWriteReadStatus != 0)//PASSED)
+	  {
+	    /* KO */
+	    /* Toggle LED3 */
+	    while(1)
+	    {
+	    	HAL_GPIO_TogglePin(LED_Status_GPIO_Port, LED_Status_Pin);
+	    	HAL_Delay(500);
+	      //BSP_LED_Toggle(LED3);
+	    }
+	  }
+	  else
+	  {
+	    /* OK, turn on LED1 */
+		  HAL_GPIO_TogglePin(LED_Status_GPIO_Port, LED_Status_Pin);
+	    //BSP_LED_On(LED1);
+	  }
+}
 
 /* USER CODE END 0 */
 
@@ -169,23 +255,54 @@ int main(void)
   // Set PWM Backlight to 50%
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
-  static int btn_set = 0;
-  uint8_t buffer[10] = {
-		  'M','o','i','n',0
-  };
-  uint8_t recv[10] = {0,0,0,0,0,0,0,0,0,0};
-
-  uint8_t toggle_led = 0;
-  //HAL_TIM_Encoder_Start_IT(&htim8, TIM_CHANNEL_ALL);
-
+  // Start encoder
+  HAL_TIM_Encoder_Start_IT(&htim8, TIM_CHANNEL_ALL);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_GPIO_WritePin(LED_Status_GPIO_Port, LED_Status_Pin, 1);
+  SD_RAM_TEST();
+  int blaa = 0;
+  uint8_t led_val = 55;
+  led_fill(led_val,led_val,led_val);
+  led_show();
+  //HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3,(uint32_t*) &BUF_DMA, (uint16_t)ARRAY_LEN);
   while (1)
   {
-	  ST7789_Test();
+	  //menu();
+	 /*
+	  if(btn_enc){
+		  toggle_led ^= 1;
+		  if(toggle_led){
+			  led_fill(led_val,led_val,led_val);
+			  led_show();
+		  }else{
+			  led_fill(0,0,0);
+			  led_show();
+		  }
+		  HAL_Delay(100);
+		  btn_enc = 0;
+		  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+	  }
+	  */
+	  if(pic_captured == 0 /*&& pic_written == 1*/){
+		  //ov7670_startCap(OV7670_CAP_SINGLE_FRAME, &framebuffer);
+		  ov7670_startCap(OV7670_CAP_SINGLE_FRAME, sdramptr);
+		  pic_written = 0;
+		  pic_captured = 2;
+	  }
+	  if(pic_captured == 1){
+		  blaa ++;
+		  //memcpy(framebuffer, sdramptr, sizeof(framebuffer));
+		  led_val = (uint8_t)(blaa % 50);
+		  led_fill(led_val,led_val,led_val);
+		  led_show();
+		  pic_captured = 0;
+		  ov7670_stopCap();
+		  ST7789_DrawImage(0,0,320,240,sdramptr);
+		  //ST7789_DrawImage(0,0,320,240,framebuffer);
+	  }
+	  //ST7789_Test();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -262,7 +379,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_1);
+  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_8);
 }
 
 /**
@@ -584,15 +701,15 @@ static void MX_TIM3_Init(void)
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN TIM3_Init 2 */
+  htim3.Init.Period = PWM_ARR;
+  HAL_TIM_Base_Init(&htim3);
+
+  //DMAMUX1_Channel0->CCR |= 25U;
 
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
@@ -620,19 +737,19 @@ static void MX_TIM8_Init(void)
   htim8.Instance = TIM8;
   htim8.Init.Prescaler = 0;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 65535;
+  htim8.Init.Period = 100;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 10;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 10;
   if (HAL_TIM_Encoder_Init(&htim8, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -705,15 +822,19 @@ static void MX_DMA_Init(void)
 {
 
   /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
-  /* DMA1_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+  /* DMA2_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+  /* DMAMUX1_OVR_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMAMUX1_OVR_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMAMUX1_OVR_IRQn);
 
 }
 
@@ -740,19 +861,19 @@ static void MX_FMC_Init(void)
   hsdram1.Init.RowBitsNumber = FMC_SDRAM_ROW_BITS_NUM_12;
   hsdram1.Init.MemoryDataWidth = FMC_SDRAM_MEM_BUS_WIDTH_16;
   hsdram1.Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
-  hsdram1.Init.CASLatency = FMC_SDRAM_CAS_LATENCY_1;
+  hsdram1.Init.CASLatency = FMC_SDRAM_CAS_LATENCY_3;
   hsdram1.Init.WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
-  hsdram1.Init.SDClockPeriod = FMC_SDRAM_CLOCK_DISABLE;
+  hsdram1.Init.SDClockPeriod = FMC_SDRAM_CLOCK_PERIOD_3;
   hsdram1.Init.ReadBurst = FMC_SDRAM_RBURST_DISABLE;
-  hsdram1.Init.ReadPipeDelay = FMC_SDRAM_RPIPE_DELAY_0;
+  hsdram1.Init.ReadPipeDelay = FMC_SDRAM_RPIPE_DELAY_2;
   /* SdramTiming */
-  SdramTiming.LoadToActiveDelay = 16;
-  SdramTiming.ExitSelfRefreshDelay = 16;
-  SdramTiming.SelfRefreshTime = 16;
-  SdramTiming.RowCycleDelay = 16;
-  SdramTiming.WriteRecoveryTime = 16;
-  SdramTiming.RPDelay = 16;
-  SdramTiming.RCDDelay = 16;
+  SdramTiming.LoadToActiveDelay = 3;
+  SdramTiming.ExitSelfRefreshDelay = 15;
+  SdramTiming.SelfRefreshTime = 9;
+  SdramTiming.RowCycleDelay = 12;
+  SdramTiming.WriteRecoveryTime = 6;
+  SdramTiming.RPDelay = 4;
+  SdramTiming.RCDDelay = 4;
 
   if (HAL_SDRAM_Init(&hsdram1, &SdramTiming) != HAL_OK)
   {
@@ -761,6 +882,26 @@ static void MX_FMC_Init(void)
 
   /* USER CODE BEGIN FMC_Init 2 */
 
+  // RAM Clock 200MHz = 5ns
+  // TRAS:  min=40ns (8)*5ns max=100k ns
+  // TXSR: "ExitSelfRefreshDelay" min=70ns 	is (14) * 5ns
+  // TRC:  min=55ns = (11)*5ns
+  // TWR:  2 Clock cycles
+  // TRP: 15ns = (3)*5ns
+  // TRCD: 15ns = (3)*5ns
+
+  /*
+   * Timing backup
+  SdramTiming.LoadToActiveDelay = 2;
+  SdramTiming.ExitSelfRefreshDelay = 14;
+  SdramTiming.SelfRefreshTime = 8;
+  SdramTiming.RowCycleDelay = 11;
+  SdramTiming.WriteRecoveryTime = 5;
+  SdramTiming.RPDelay = 3;
+  SdramTiming.RCDDelay = 3;
+   */
+
+  SDRAM_Initialization_Sequence(&hsdram1, &command);
   /* USER CODE END FMC_Init 2 */
 }
 
@@ -806,11 +947,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA1 PA2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2;
+  /*Configure GPIO pin : PA1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : ENC_IN_Pin */
+  GPIO_InitStruct.Pin = ENC_IN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(ENC_IN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : ADDR0_Pin */
   GPIO_InitStruct.Pin = ADDR0_Pin;
@@ -839,9 +986,74 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
+
+
+/**
+  * @brief  Perform the SDRAM exernal memory inialization sequence
+  * @param  hsdram: SDRAM handle
+  * @param  Command: Pointer to SDRAM command structure
+  * @retval None
+  */
+static void SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command)
+{
+  __IO uint32_t tmpmrd =0;
+  /* Step 3:  Configure a clock configuration enable command */
+  Command->CommandMode 			 = FMC_SDRAM_CMD_CLK_ENABLE;
+  Command->CommandTarget 		 = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command->AutoRefreshNumber 	 = 1;
+  Command->ModeRegisterDefinition = 0;
+
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, 0x1000);
+
+  /* Step 4: Insert 100 ms delay */
+  HAL_Delay(100);
+
+  /* Step 5: Configure a PALL (precharge all) command */
+  Command->CommandMode 			 = FMC_SDRAM_CMD_PALL;
+  Command->CommandTarget 	     = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command->AutoRefreshNumber 	 = 1;
+  Command->ModeRegisterDefinition = 0;
+
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, 0x1000);
+
+  /* Step 6 : Configure a Auto-Refresh command */
+  Command->CommandMode 			 = FMC_SDRAM_CMD_AUTOREFRESH_MODE;
+  Command->CommandTarget 		 = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command->AutoRefreshNumber 	 = 4;
+  Command->ModeRegisterDefinition = 0;
+
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, 0x1000);
+
+  /* Step 7: Program the external memory mode register */
+  tmpmrd = (uint32_t)SDRAM_MODEREG_BURST_LENGTH_2          |
+                     SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL   |
+                     SDRAM_MODEREG_CAS_LATENCY_3           |
+                     SDRAM_MODEREG_OPERATING_MODE_STANDARD |
+                     SDRAM_MODEREG_WRITEBURST_MODE_SINGLE;
+
+  Command->CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
+  Command->CommandTarget 		 = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command->AutoRefreshNumber 	 = 1;
+  Command->ModeRegisterDefinition = tmpmrd;
+
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, 0x1000);
+
+  /* Step 8: Set the refresh rate counter */
+  /* (15.62 us x Freq) - 20 */
+  /* Set the device refresh counter */
+  HAL_SDRAM_ProgramRefreshRate(hsdram, REFRESH_COUNT);
+}
 
 /* USER CODE END 4 */
 

@@ -11,7 +11,7 @@
 #include "ov7670.h"
 #include "bv.h"
 uint16_t actual_menu = ACT_MENU_MAIN;
-uint16_t cursorLine = 0;
+uint32_t cursorLine = 0;
 
 // extern variables
 extern TIM_HandleTypeDef htim8;
