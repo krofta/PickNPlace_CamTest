@@ -64,6 +64,7 @@ extern uint8_t cursorChanged;
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_dcmi_pssi;
 extern DCMI_HandleTypeDef hdcmi;
+extern FDCAN_HandleTypeDef hfdcan3;
 extern SPI_HandleTypeDef hspi1;
 extern DMA_HandleTypeDef hdma_tim3_ch3;
 extern TIM_HandleTypeDef htim3;
@@ -350,6 +351,34 @@ void DMAMUX1_OVR_IRQHandler(void)
   /* USER CODE BEGIN DMAMUX1_OVR_IRQn 1 */
 
   /* USER CODE END DMAMUX1_OVR_IRQn 1 */
+}
+
+/**
+  * @brief This function handles FDCAN3 interrupt 0.
+  */
+void FDCAN3_IT0_IRQHandler(void)
+{
+  /* USER CODE BEGIN FDCAN3_IT0_IRQn 0 */
+
+  /* USER CODE END FDCAN3_IT0_IRQn 0 */
+  HAL_FDCAN_IRQHandler(&hfdcan3);
+  /* USER CODE BEGIN FDCAN3_IT0_IRQn 1 */
+
+  /* USER CODE END FDCAN3_IT0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles FDCAN3 interrupt 1.
+  */
+void FDCAN3_IT1_IRQHandler(void)
+{
+  /* USER CODE BEGIN FDCAN3_IT1_IRQn 0 */
+
+  /* USER CODE END FDCAN3_IT1_IRQn 0 */
+  HAL_FDCAN_IRQHandler(&hfdcan3);
+  /* USER CODE BEGIN FDCAN3_IT1_IRQn 1 */
+
+  /* USER CODE END FDCAN3_IT1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
