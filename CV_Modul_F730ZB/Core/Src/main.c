@@ -115,14 +115,15 @@ static void SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint8_t ubKeyNumber = 0x0;
+// Buffers for CAN transmit and can receive
+__IO uint8_t ubKeyNumber = 0x0;
 FDCAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[8];
 FDCAN_TxHeaderTypeDef TxHeader;
 uint8_t TxData[8];
 
 
-/* Read/Write Buffers */
+/* Read/Write Buffers for RAM test*/
 uint32_t aTxBuffer[BUFFER_SIZE];
 uint32_t aRxBuffer[BUFFER_SIZE];
 
@@ -194,53 +195,6 @@ void SD_RAM_TEST() {
 		  HAL_GPIO_TogglePin(LED_Status_GPIO_Port, LED_Status_Pin);
 	    //BSP_LED_On(LED1);
 	  }
-}
-
-static void FDCAN_Config(void)
-{
-  FDCAN_FilterTypeDef sFilterConfig;
-
-  /* Configure Rx filter */
-  sFilterConfig.IdType = FDCAN_STANDARD_ID;
-  sFilterConfig.FilterIndex = 0;
-  sFilterConfig.FilterType = FDCAN_FILTER_MASK;
-  sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-  sFilterConfig.FilterID1 = 0x321;
-  sFilterConfig.FilterID2 = 0x7FF;
-  if (HAL_FDCAN_ConfigFilter(&hfdcan3, &sFilterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* Configure global filter:
-     Filter all remote frames with STD and EXT ID
-     Reject non matching frames with STD ID and EXT ID */
-  if (HAL_FDCAN_ConfigGlobalFilter(&hfdcan3, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* Start the FDCAN module */
-  if (HAL_FDCAN_Start(&hfdcan3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  if (HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* Prepare Tx Header */
-  TxHeader.Identifier = 0x321;
-  TxHeader.IdType = FDCAN_STANDARD_ID;
-  TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-  TxHeader.DataLength = FDCAN_DLC_BYTES_2;
-  TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-  TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
-  TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
-  TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-  TxHeader.MessageMarker = 0;
 }
 
 
@@ -320,7 +274,6 @@ int main(void)
   uint8_t led_val = 55;
   led_fill(led_val,led_val,led_val);
   led_show();
-  FDCAN_Config();
 
   //HAL_FDCAN_Start(&hfdcan3);
   //HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3,(uint32_t*) &BUF_DMA, (uint16_t)ARRAY_LEN);
@@ -351,9 +304,9 @@ int main(void)
 	  if(pic_captured == 1){
 		  blaa ++;
 		  //memcpy(framebuffer, sdramptr, sizeof(framebuffer));
-		  led_val = (uint8_t)(blaa % 50);
+/*		  led_val = (uint8_t)(blaa % 50);
 		  led_fill(led_val,led_val,led_val);
-		  led_show();
+		  led_show();*/
 		  pic_captured = 0;
 		  ov7670_stopCap();
 		  ST7789_DrawImage(0,0,320,240,sdramptr);
@@ -502,6 +455,9 @@ static void MX_FDCAN3_Init(void)
 
   /* USER CODE BEGIN FDCAN3_Init 0 */
 
+	// --------- configure CAN to 500kb/s -----------------
+	FDCAN_FilterTypeDef sFilterConfig;
+
   /* USER CODE END FDCAN3_Init 0 */
 
   /* USER CODE BEGIN FDCAN3_Init 1 */
@@ -511,27 +467,27 @@ static void MX_FDCAN3_Init(void)
   hfdcan3.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
   hfdcan3.Init.Mode = FDCAN_MODE_NORMAL;
   hfdcan3.Init.AutoRetransmission = ENABLE;
-  hfdcan3.Init.TransmitPause = ENABLE;
-  hfdcan3.Init.ProtocolException = DISABLE;
-  hfdcan3.Init.NominalPrescaler = 1;
-  hfdcan3.Init.NominalSyncJumpWidth = 16;
-  hfdcan3.Init.NominalTimeSeg1 = 63;
-  hfdcan3.Init.NominalTimeSeg2 = 16;
+  hfdcan3.Init.TransmitPause = DISABLE;
+  hfdcan3.Init.ProtocolException = ENABLE;
+  hfdcan3.Init.NominalPrescaler = 2;
+  hfdcan3.Init.NominalSyncJumpWidth = 8;
+  hfdcan3.Init.NominalTimeSeg1 = 37;
+  hfdcan3.Init.NominalTimeSeg2 = 10;
   hfdcan3.Init.DataPrescaler = 1;
-  hfdcan3.Init.DataSyncJumpWidth = 4;
-  hfdcan3.Init.DataTimeSeg1 = 5;
-  hfdcan3.Init.DataTimeSeg2 = 4;
+  hfdcan3.Init.DataSyncJumpWidth = 8;
+  hfdcan3.Init.DataTimeSeg1 = 16;
+  hfdcan3.Init.DataTimeSeg2 = 16;
   hfdcan3.Init.MessageRAMOffset = 0;
   hfdcan3.Init.StdFiltersNbr = 1;
-  hfdcan3.Init.ExtFiltersNbr = 1;
+  hfdcan3.Init.ExtFiltersNbr = 0;
   hfdcan3.Init.RxFifo0ElmtsNbr = 8;
   hfdcan3.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
-  hfdcan3.Init.RxFifo1ElmtsNbr = 8;
+  hfdcan3.Init.RxFifo1ElmtsNbr = 0;
   hfdcan3.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
-  hfdcan3.Init.RxBuffersNbr = 8;
+  hfdcan3.Init.RxBuffersNbr = 0;
   hfdcan3.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
-  hfdcan3.Init.TxEventsNbr = 8;
-  hfdcan3.Init.TxBuffersNbr = 8;
+  hfdcan3.Init.TxEventsNbr = 0;
+  hfdcan3.Init.TxBuffersNbr = 0;
   hfdcan3.Init.TxFifoQueueElmtsNbr = 8;
   hfdcan3.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
   hfdcan3.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
@@ -540,6 +496,43 @@ static void MX_FDCAN3_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN FDCAN3_Init 2 */
+
+  /* Configure Rx filter */
+  sFilterConfig.IdType = FDCAN_STANDARD_ID;
+  sFilterConfig.FilterIndex = 0;
+  sFilterConfig.FilterType = FDCAN_FILTER_MASK;
+  sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  sFilterConfig.FilterID1 = 0x321;
+  sFilterConfig.FilterID2 = 0x7FF;
+  if (HAL_FDCAN_ConfigFilter(&hfdcan3, &sFilterConfig) != HAL_OK)
+  {
+    /* Filter configuration Error */
+    Error_Handler();
+  }
+
+  /* Start the FDCAN module */
+  if (HAL_FDCAN_Start(&hfdcan3) != HAL_OK)
+  {
+    /* Start Error */
+    Error_Handler();
+  }
+
+  if (HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
+  {
+    /* Notification Error */
+    Error_Handler();
+  }
+
+  /* Prepare Tx Header */
+  TxHeader.Identifier = 0x321;
+  TxHeader.IdType = FDCAN_STANDARD_ID;
+  TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+  TxHeader.DataLength = FDCAN_DLC_BYTES_2;
+  TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+  TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
+  TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
+  TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+  TxHeader.MessageMarker = 0;
 
   /* USER CODE END FDCAN3_Init 2 */
 
@@ -1127,6 +1120,46 @@ static void SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM
   /* Set the device refresh counter */
   HAL_SDRAM_ProgramRefreshRate(hsdram, REFRESH_COUNT);
 }
+
+/**
+  * @brief  Rx FIFO 0 callback.
+  * @param  hfdcan: pointer to an FDCAN_HandleTypeDef structure that contains
+  *         the configuration information for the specified FDCAN.
+  * @param  RxFifo0ITs: indicates which Rx FIFO 0 interrupts are signalled.
+  *                     This parameter can be any combination of @arg FDCAN_Rx_Fifo0_Interrupts.
+  * @retval None
+  */
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+  if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
+  {
+    /* Retreive Rx messages from RX FIFO0 */
+    if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+    {
+    /* Reception Error */
+    Error_Handler();
+    }
+
+    /* Display LEDx */
+    if ((RxHeader.Identifier == 0x321) && (RxHeader.IdType == FDCAN_STANDARD_ID) && (RxHeader.DataLength == FDCAN_DLC_BYTES_2))
+    {
+
+      //LED_Display(RxData[0]);
+    	if( RxData[0] == 0x01){
+    		led_val = RxData[1];
+    		led_fill(led_val, led_val, led_val);
+    		led_show();
+    	}
+    }
+
+    if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
+    {
+      /* Notification Error */
+      Error_Handler();
+    }
+  }
+}
+
 
 /* USER CODE END 4 */
 

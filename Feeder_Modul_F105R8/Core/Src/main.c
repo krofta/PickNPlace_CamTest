@@ -46,11 +46,20 @@ CAN_HandleTypeDef hcan1;
 I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
 
 char barcode[100];
 char* act_char= &barcode[0];
+
+// variablen für can kommunikation
+uint8_t ubKeyNumber = 0x0;
+CAN_TxHeaderTypeDef   TxHeader;
+CAN_RxHeaderTypeDef   RxHeader;
+uint8_t               TxData[8];
+uint8_t               RxData[8];
+uint32_t              TxMailbox;
 
 
 /* USER CODE END PV */
@@ -61,6 +70,7 @@ static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_TIM3_Init(void);
 void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
@@ -130,10 +140,16 @@ int main(void)
   MX_USB_HOST_Init();
   MX_I2C1_Init();
   MX_TIM1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(LED_Error_GPIO_Port, LED_Error_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(LED_Status_GPIO_Port, LED_Status_Pin, GPIO_PIN_RESET);
   HAL_TIM_Base_Start_IT(&htim1);
+
+  //uint32_t tx_id;
+
+
+  //configure_tx_header();
 
   /* USER CODE END 2 */
 
@@ -154,7 +170,7 @@ int main(void)
     	if(HAL_GPIO_ReadPin(BTN_TBACK_GPIO_Port, BTN_TBACK_Pin) == GPIO_PIN_RESET){
     		sprocket_started = 1;
     		//HAL_TIMEx_PWMN_Start(&htim3, TIM_CHANNEL_1);
-			HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_SET);
+			//HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_SET);
     	}
     }
     if(HAL_GPIO_ReadPin(BTN_TBACK_GPIO_Port, BTN_TBACK_Pin) == GPIO_PIN_SET && sprocket_started == 1){
@@ -162,7 +178,7 @@ int main(void)
     	if(HAL_GPIO_ReadPin(BTN_TBACK_GPIO_Port, BTN_TBACK_Pin) == GPIO_PIN_SET){
     		sprocket_started = 0;
     		//HAL_TIMEx_PWMN_Stop(&htim3, TIM_CHANNEL_1);
-			HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);
+			//HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);
     	}
     }
     if(HAL_GPIO_ReadPin(BTN_TFOR_GPIO_Port, BTN_TFOR_Pin) == GPIO_PIN_RESET && sprocket_started == 0){
@@ -171,7 +187,7 @@ int main(void)
     		sprocket_started = 2;
     		//HAL_TIMEx_PWMN_Start(&htim3, TIM_CHANNEL_1);
 			//HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(DIR_A2_GPIO_Port, DIR_A2_Pin, GPIO_PIN_SET);
+			//HAL_GPIO_WritePin(DIR_A2_GPIO_Port, DIR_A2_Pin, GPIO_PIN_SET);
     	}
     }
     if(HAL_GPIO_ReadPin(BTN_TFOR_GPIO_Port, BTN_TFOR_Pin) == GPIO_PIN_SET && sprocket_started == 2){
@@ -180,7 +196,7 @@ int main(void)
     		sprocket_started = 0;
     		//HAL_TIMEx_PWMN_Stop(&htim3, TIM_CHANNEL_1);
 			//HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(DIR_A2_GPIO_Port, DIR_A2_Pin, GPIO_PIN_RESET);
+			//HAL_GPIO_WritePin(DIR_A2_GPIO_Port, DIR_A2_Pin, GPIO_PIN_RESET);
     	}
     }
 
@@ -191,7 +207,7 @@ int main(void)
     	if(HAL_GPIO_ReadPin(BTN_SBACK_GPIO_Port, BTN_SBACK_Pin) == GPIO_PIN_RESET){
     		tape_started = 1;
     		//HAL_TIMEx_PWMN_Start(&htim3, TIM_CHANNEL_1);
-			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET);
+			//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET);
     	}
     }
     if(HAL_GPIO_ReadPin(BTN_SBACK_GPIO_Port, BTN_SBACK_Pin) == GPIO_PIN_SET && tape_started == 1){
@@ -199,7 +215,7 @@ int main(void)
     	if(HAL_GPIO_ReadPin(BTN_SBACK_GPIO_Port, BTN_SBACK_Pin) == GPIO_PIN_SET){
     		tape_started = 0;
     		//HAL_TIMEx_PWMN_Stop(&htim3, TIM_CHANNEL_1);
-			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET);
+			//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET);
     	}
     }
     if(HAL_GPIO_ReadPin(BTN_SFOR_GPIO_Port, BTN_SFOR_Pin) == GPIO_PIN_RESET && tape_started == 0){
@@ -208,7 +224,7 @@ int main(void)
     		tape_started = 2;
     		//HAL_TIMEx_PWMN_Start(&htim3, TIM_CHANNEL_1);
 			//HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(DIR_B2_GPIO_Port, DIR_B2_Pin, GPIO_PIN_SET);
+			//HAL_GPIO_WritePin(DIR_B2_GPIO_Port, DIR_B2_Pin, GPIO_PIN_SET);
     	}
     }
     if(HAL_GPIO_ReadPin(BTN_SFOR_GPIO_Port, BTN_SFOR_Pin) == GPIO_PIN_SET && tape_started == 2){
@@ -217,7 +233,7 @@ int main(void)
     		tape_started = 0;
     		//HAL_TIMEx_PWMN_Stop(&htim3, TIM_CHANNEL_1);
 			//HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(DIR_B2_GPIO_Port, DIR_B2_Pin, GPIO_PIN_RESET);
+			//HAL_GPIO_WritePin(DIR_B2_GPIO_Port, DIR_B2_Pin, GPIO_PIN_RESET);
     	}
     }
 
@@ -248,15 +264,13 @@ void SystemClock_Config(void)
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
+  RCC_OscInitStruct.Prediv1Source = RCC_PREDIV1_SOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
-  RCC_OscInitStruct.PLL2.PLL2State = RCC_PLL2_ON;
-  RCC_OscInitStruct.PLL2.PLL2MUL = RCC_PLL2_MUL10;
-  RCC_OscInitStruct.PLL2.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV2;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  RCC_OscInitStruct.PLL2.PLL2State = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -270,12 +284,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV2;
+  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV3;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -294,6 +308,7 @@ static void MX_CAN1_Init(void)
 {
 
   /* USER CODE BEGIN CAN1_Init 0 */
+	CAN_FilterTypeDef  sFilterConfig;
 
   /* USER CODE END CAN1_Init 0 */
 
@@ -301,22 +316,74 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Prescaler = 4;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_4TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = DISABLE;
+  hcan1.Init.AutoRetransmission = ENABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
   hcan1.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
     Error_Handler();
   }
+
+
   /* USER CODE BEGIN CAN1_Init 2 */
+
+  // 1 Sekunde warten, um sicher zu stellen, dass der Feeder richtig gesteckt ist
+  HAL_Delay(1000);
+
+  uint8_t id = 0;
+  // pins are low active
+  id |=	  (HAL_GPIO_ReadPin(ADDR0_GPIO_Port, ADDR0_Pin) == GPIO_PIN_RESET ? 1 : 0) << 0;
+  id |=	  (HAL_GPIO_ReadPin(ADDR1_GPIO_Port, ADDR1_Pin) == GPIO_PIN_RESET ? 1 : 0) << 1;
+  id |=	  (HAL_GPIO_ReadPin(ADDR2_GPIO_Port, ADDR2_Pin) == GPIO_PIN_RESET ? 1 : 0) << 2;
+  id |=	  (HAL_GPIO_ReadPin(ADDR3_GPIO_Port, ADDR3_Pin) == GPIO_PIN_RESET ? 1 : 0) << 3;
+  id |=	  (HAL_GPIO_ReadPin(ADDR4_GPIO_Port, ADDR4_Pin) == GPIO_PIN_RESET ? 1 : 0) << 4;
+  id |=	  (HAL_GPIO_ReadPin(ADDR5_GPIO_Port, ADDR5_Pin) == GPIO_PIN_RESET ? 1 : 0) << 5;
+  id |=	  (HAL_GPIO_ReadPin(ADDR6_GPIO_Port, ADDR6_Pin) == GPIO_PIN_RESET ? 1 : 0) << 6;
+  id |=	  (HAL_GPIO_ReadPin(ADDR7_GPIO_Port, ADDR7_Pin) == GPIO_PIN_RESET ? 1 : 0) << 7;
+
+
+
+  sFilterConfig.FilterBank = 0;
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0xFF10;//0x0100 + id;
+  //sFilterConfig.FilterIdHigh = 0x0000;
+  sFilterConfig.FilterIdLow = 0x0000;
+  sFilterConfig.FilterMaskIdHigh = 0x00EF;
+  //sFilterConfig.FilterMaskIdHigh = 0x0000;
+  sFilterConfig.FilterMaskIdLow = 0xFFFF;
+  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  sFilterConfig.FilterActivation = ENABLE;
+  sFilterConfig.SlaveStartFilterBank = 14;
+
+  if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK)
+  {
+    /* Filter configuration Error */
+    Error_Handler();
+  }
+
+  /* Start the CAN peripheral */
+  if (HAL_CAN_Start(&hcan1) != HAL_OK)
+  {
+    /* Start Error */
+    Error_Handler();
+  }
+
+  /* Activate CAN RX notification */
+  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+  {
+    /* Notification Error */
+    Error_Handler();
+  }
+
 
   /* USER CODE END CAN1_Init 2 */
 
@@ -403,6 +470,67 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -418,10 +546,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, DIR_A_Pin|DIR_A2_Pin|DIR_B2_Pin|GPIO_PIN_10, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, MODE_Pin|LED_Error_Pin|LED_Status_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, DIR_B_Pin|MODE_Pin|LED_Error_Pin|LED_Status_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : BTN_TFOR_Pin BTN_TBACK_Pin TAPE_MICROBTN_Pin */
   GPIO_InitStruct.Pin = BTN_TFOR_Pin|BTN_TBACK_Pin|TAPE_MICROBTN_Pin;
@@ -429,15 +557,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DIR_A_Pin DIR_A2_Pin DIR_B2_Pin PA10 */
-  GPIO_InitStruct.Pin = DIR_A_Pin|DIR_A2_Pin|DIR_B2_Pin|GPIO_PIN_10;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : DIR_B_Pin MODE_Pin LED_Error_Pin LED_Status_Pin */
-  GPIO_InitStruct.Pin = DIR_B_Pin|MODE_Pin|LED_Error_Pin|LED_Status_Pin;
+  /*Configure GPIO pins : MODE_Pin LED_Error_Pin LED_Status_Pin */
+  GPIO_InitStruct.Pin = MODE_Pin|LED_Error_Pin|LED_Status_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -457,9 +578,59 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA10 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+  * @brief  Rx Fifo 0 message pending callback in non blocking mode
+  * @param  CanHandle: pointer to a CAN_HandleTypeDef structure that contains
+  *         the configuration information for the specified CAN.
+  * @retval None
+  */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *CanHandle)
+{
+  /* Get RX message */
+  if (HAL_CAN_GetRxMessage(CanHandle, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    /* Reception Error */
+    Error_Handler();
+  }
+
+  /* Display LEDx */
+  if((RxHeader.IDE == CAN_ID_EXT) && (RxHeader.ExtId ==  0x01000000)){
+	  if( RxData[0] == 0x01){
+		  HAL_GPIO_WritePin(LED_Error_GPIO_Port, LED_Error_Pin, RxData[1]> 0);
+	  }
+  }
+
+/*  if (((RxHeader.StdId == 0x001)||)&& (RxHeader.IDE == CAN_ID_STD) && (RxHeader.DLC == 2))
+  {
+	  if( RxData[0] == 0x01){
+		  HAL_GPIO_WritePin(LED_Error_GPIO_Port, LED_Error_Pin, RxData[1]> 0);
+	  }
+    //ubKeyNumber = RxData[0];
+  }
+  */
+}
+
+void configure_tx_header(uint32_t id){
+
+	  /* Configure Transmission process */
+	  TxHeader.StdId = id;
+	  TxHeader.ExtId = id + 1000;
+	  TxHeader.RTR = CAN_RTR_DATA;
+	  TxHeader.IDE = CAN_ID_STD;
+	  TxHeader.DLC = 2;
+	  TxHeader.TransmitGlobalTime = DISABLE;
+}
 
 /* USER CODE END 4 */
 
